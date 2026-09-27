@@ -1,8 +1,0 @@
-[hcalpulse_data_raw_cfg] using 1 files from /afs/cern.ch/work/p/ptiwari/public/hcal/default/CMSSW_17_0_0_pre2/src/HCALPulse/pulse_shape_study/test/jetmet0_files.txt
-%MSG-i ThreadStreamSetup:  (NoModuleName) 18-Aug-2026 07:37:13 CEST pre-events
-setting # threads 4
-setting # streams 1
-%MSG
-18-Aug-2026 07:37:15 CEST  Initiating request to open file root://cms-xrd-global.cern.ch//store/data/Run2026A/JetMET0/RAW/v1/000/401/642/00000/4c5c01f5-f9e6-4e1f-bcc7-c116b0c0c9bd.root?scitag.flow=196664
-18-Aug-2026 07:37:21 CEST  Successfully opened file root://cms-xrd-global.cern.ch//store/data/Run2026A/JetMET0/RAW/v1/000/401/642/00000/4c5c01f5-f9e6-4e1f-bcc7-c116b0c0c9bd.root?scitag.flow=196664
-18-Aug-2026 07:48:46 CEST  Closed file root://cms-xrd-global.cern.ch//store/data/Run2026A/JetMET0/RAW/v1/000/401/642/00000/4c5c01f5-f9e6-4e1f-bcc7-c116b0c0c9bd.root?scitag.flow=196664

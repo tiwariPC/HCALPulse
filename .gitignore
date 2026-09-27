@@ -13,8 +13,11 @@ venv/
 *.so
 *.d
 *.pcm
-*.root
 *.exe
+
+# Backups and logs
+*.bak
+*.log
 
 # Build directories
 build/
