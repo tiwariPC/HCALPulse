@@ -1,0 +1,12 @@
+<use name="FWCore/Framework"/>
+<use name="FWCore/ParameterSet"/>
+<use name="FWCore/ServiceRegistry"/>
+<use name="FWCore/Utilities"/>
+<use name="CommonTools/UtilAlgos"/>
+<use name="DataFormats/HcalDigi"/>
+<use name="DataFormats/HcalDetId"/>
+<use name="CalibFormats/HcalObjects"/>
+<use name="CondFormats/HcalObjects"/>
+<use name="CalibCalorimetry/HcalAlgos"/>
+<use name="root"/>
+<flags EDM_PLUGIN="1"/>
