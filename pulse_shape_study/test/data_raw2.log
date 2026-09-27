@@ -1,0 +1,8 @@
+%MSG-i ThreadStreamSetup:  (NoModuleName) 12-Aug-2026 10:24:09 CEST pre-events
+setting # threads 4
+setting # streams 1
+%MSG
+12-Aug-2026 10:24:13 CEST  Initiating request to open file root://cms-xrd-global.cern.ch//store/data/Run2026A/JetMET0/RAW/v1/000/401/614/00000/0ab92356-5c66-483e-9ea4-7a1aeeb09ac6.root?scitag.flow=196664
+12-Aug-2026 10:24:17 CEST  Successfully opened file root://cms-xrd-global.cern.ch//store/data/Run2026A/JetMET0/RAW/v1/000/401/614/00000/0ab92356-5c66-483e-9ea4-7a1aeeb09ac6.root?scitag.flow=196664
+12-Aug-2026 10:24:19 CEST  Closed file root://cms-xrd-global.cern.ch//store/data/Run2026A/JetMET0/RAW/v1/000/401/614/00000/0ab92356-5c66-483e-9ea4-7a1aeeb09ac6.root?scitag.flow=196664
+EXIT CODE: 0

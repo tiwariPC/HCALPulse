@@ -1,0 +1,149 @@
+18-Aug-2026 11:17:32 CEST  Initiating request to open file root://cms-xrd-global.cern.ch//store/relval/CMSSW_16_1_0_pre4/RelValQCD_FlatPt_15_3000HS_14/GEN-SIM-DIGI-RAW/160X_mcRun3_2026_realistic_v6_STD_RegeneratedGS_2026_noPU_20260420_140837-v3/2590000/0252edd4-ce16-48f6-9eea-3b343ed3b66e.root?scitag.flow=196664
+%MSG-f XrdAdaptor:  file_open 18-Aug-2026 11:17:36 CEST pre-events
+Opened a file at URL root://dcache-cms291.desy.de:33120//store/relval/CMSSW_16_1_0_pre4/RelValQCD_FlatPt_15_3000HS_14/GEN-SIM-DIGI-RAW/160X_mcRun3_2026_realistic_v6_STD_RegeneratedGS_2026_noPU_20260420_140837-v3/2590000/0252edd4-ce16-48f6-9eea-3b343ed3b66e.root?org.dcache.uuid=59f5ec35-8efd-4dd7-9a0c-4d74a67f4a87&org.dcache.xrootd.client=ptiwari.2904646@lxplus935.cern.ch&scitag.flow=196664&xrd.logintoken=org.dcache.door=2001:638:700:10bf:0:0:1:d8:1094&xrdcl.requuid=8eb31e54-577e-4e57-81d7-5d7fb222d881
+%MSG
+18-Aug-2026 11:17:43 CEST  Successfully opened file root://cms-xrd-global.cern.ch//store/relval/CMSSW_16_1_0_pre4/RelValQCD_FlatPt_15_3000HS_14/GEN-SIM-DIGI-RAW/160X_mcRun3_2026_realistic_v6_STD_RegeneratedGS_2026_noPU_20260420_140837-v3/2590000/0252edd4-ce16-48f6-9eea-3b343ed3b66e.root?scitag.flow=196664
+%MSG-f XrdAdaptor:  (NoModuleName) 18-Aug-2026 11:17:44 CEST pre-events
+Opened a file at URL root://st-096-100gb-ip306-40da9.cern.ch:1095//store/relval/CMSSW_16_1_0_pre4/RelValQCD_FlatPt_15_3000HS_14/GEN-SIM-DIGI-RAW/160X_mcRun3_2026_realistic_v6_STD_RegeneratedGS_2026_noPU_20260420_140837-v3/2590000/0252edd4-ce16-48f6-9eea-3b343ed3b66e.root?cap.format=AEAD&cap.key=LoNjPjkNIX+qwWZwlmYzqFWzK3s=&cap.msg=tFn6ZgdKGDy0ANB_oxzbvOtWUFOCVSQRUuz3ZXF9Ucm1VyvCKBofdX4jEcXNs3XaJJe3-qDbGg1moHUb-7drMpqgqZj2gh5LYLy-YGzRZuT-ztytybEU4Jr8JhgOyD___W4VLVZx7wYJYGf63Vtt0tteuh3U8r6h5rJ16uIJWfT03-7Uk6PzLA1qzohHx3ru2Ds0hYBSo9MQohjvPBC3X1h_FlIKh6JDdb5fhtFPz75LSqEsYpZt3oBvLmO5LaLx3AM5TvENfeqYLsRQe4Ei5-_DMW9QQcSwSHqKXjxSxKcJnNbALX3DIrape-v58YtlNXz2VmvcNMjhFIlabHV-PmVQQx1I01tAwZ1HKvrFnqMTtM44sCbvaxjb33UolulmorVkv4IDshxAB7Jdi6gbT8OiYJAFAu28Ob_ZF6nMksr8zHBaD1NG-SbegOaFIN2a-FC4XulSsm8EKSp8Nlk_ljejQIjtjkDHWn_SCuhECyKmjZA4iQI2NL6pwtaVVqx14l-eQXHcEvZZLtiMcVh_SdFvBLmUW74rk5pmCFwFrKalexQNCbXQ1_G3EAwpA8jendQJUPeon-zGFx2upv1t7NDOcqqAuoYieSNyPRiT4s1rJzvf4mkF5BL9V_K_6idngAamt45yK47CFkr7IIeQrFXwH8-0KFZmlbsX_2MQq27uwjl2-LUsO16rBYVXW1AB7cu3PtgHNzDhSB2s0LQ6LAB_BnlsCiHp2rZzVkdRDO40bcKQY1wFP_bmfy-E9BC3IuVL9fAEV2NIxfv5z_FzQupSocIcTwV1RIwRWSm_eGEaZrDLZ_GNHdGimYliWE3tZYE32ljiMdIcevTBLNHVbf79cLrRKr8&cap.sym=AQEBAACAAAAAAAAACAAAAAAAAAABAAAAAAAAAHDxW14s5KSzGL-OkeUEvKbErebwHiQEmxxA6rU&eos.clientinfo=zbase64:MDAwMDAwNzR4nBXIYQqEIBBA4at0AWWyLVCYw6SONbCoTBNLt2/9973XOtUgis46N3EL8Ydcy9CVTsoIg/p0wniXQkJ5jC7cMFPZ76+O/m8WSoqXGvCbmQGOaLgvsJkP5N3bRFJtOsMMfn0BH2gmgg==&mgm.blockchecksum=ignore&mgm.id=16cea37f6&mgm.logid=ab796980-9ae5-11f1-bc40-a4bf0179524a&mgm.mtime=1777921868&mgm.replicahead=1&mgm.replicaindex=1&scitag.flow=196664&tried=dcache-cms291.desy.de&triedrc=resel&xrdcl.requuid=ddcc168d-6fba-477f-b77a-f42e211eac6d
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+=== HcalTimeSlew (label="HBHE") ===
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=1, bias=Slow) = 16 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=1, bias=Medium) = 10 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=1, bias=Fast) = 6.25 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=5, bias=Slow) = 16 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=5, bias=Medium) = 9.46509 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=5, bias=Fast) = 6.25 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=20, bias=Slow) = 14.4378 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=20, bias=Medium) = 7.30105 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=20, bias=Fast) = 5.88681 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=100, bias=Slow) = 9.32196 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=100, bias=Medium) = 4.78869 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=100, bias=Fast) = 4.15534 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=1000, bias=Slow) = 2.00285 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=1000, bias=Medium) = 1.1943 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M2 delay(fC=1000, bias=Fast) = 1.67816 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=1, source=HBHE, bias=Slow, isHPD=true) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=1, source=HBHE, bias=Slow, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=1, source=HBHE, bias=Medium, isHPD=true) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=1, source=HBHE, bias=Medium, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=1, source=HBHE, bias=Fast, isHPD=true) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=1, source=HBHE, bias=Fast, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=5, source=HBHE, bias=Slow, isHPD=true) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=5, source=HBHE, bias=Slow, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=5, source=HBHE, bias=Medium, isHPD=true) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=5, source=HBHE, bias=Medium, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=5, source=HBHE, bias=Fast, isHPD=true) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=5, source=HBHE, bias=Fast, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=20, source=HBHE, bias=Slow, isHPD=true) = 5.73499 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=20, source=HBHE, bias=Slow, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=20, source=HBHE, bias=Medium, isHPD=true) = 5.73499 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=20, source=HBHE, bias=Medium, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=20, source=HBHE, bias=Fast, isHPD=true) = 5.73499 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=20, source=HBHE, bias=Fast, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=100, source=HBHE, bias=Slow, isHPD=true) = 2.20804 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=100, source=HBHE, bias=Slow, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=100, source=HBHE, bias=Medium, isHPD=true) = 2.20804 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=100, source=HBHE, bias=Medium, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=100, source=HBHE, bias=Fast, isHPD=true) = 2.20804 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=100, source=HBHE, bias=Fast, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=1000, source=HBHE, bias=Slow, isHPD=true) = -2.83789 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=1000, source=HBHE, bias=Slow, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=1000, source=HBHE, bias=Medium, isHPD=true) = -2.83789 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=1000, source=HBHE, bias=Medium, isHPD=false [SiPM]) = 6 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=1000, source=HBHE, bias=Fast, isHPD=true) = -2.83789 ns
+%MSG
+%MSG-s HcalTimeSlewDumper:  HcalTimeSlewDumper:dumpts@beginRun  18-Aug-2026 11:17:51 CEST Run: 1
+  M3 delay(fC=1000, source=HBHE, bias=Fast, isHPD=false [SiPM]) = 6 ns
+%MSG
+Begin processing the 1st record. Run 1, Event 12901, LumiSection 130 on stream 0 at 18-Aug-2026 11:17:52.557 CEST
+Begin processing the 2nd record. Run 1, Event 12902, LumiSection 130 on stream 0 at 18-Aug-2026 11:17:52.558 CEST
+18-Aug-2026 11:17:52 CEST  Closed file root://cms-xrd-global.cern.ch//store/relval/CMSSW_16_1_0_pre4/RelValQCD_FlatPt_15_3000HS_14/GEN-SIM-DIGI-RAW/160X_mcRun3_2026_realistic_v6_STD_RegeneratedGS_2026_noPU_20260420_140837-v3/2590000/0252edd4-ce16-48f6-9eea-3b343ed3b66e.root?scitag.flow=196664

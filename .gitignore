@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# ROOT / C++
+*.o
+*.os
+*.so
+*.d
+*.pcm
+*.root
+*.exe
+
+# Build directories
+build/
+bin/
+obj/
+
+# Editor / OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Logs and output
+*.log
+output/
+results/
