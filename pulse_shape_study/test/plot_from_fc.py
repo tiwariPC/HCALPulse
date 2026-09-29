@@ -17,6 +17,11 @@
 #   python3 plot_from_fc.py --digiraw edmHcalPulseShape_digiraw.root
 #   python3 plot_from_fc.py --gensim X.root --digiraw Y.root  # overlay both
 #   python3 plot_from_fc.py --digiraw Y.root --data edmHcalPulseShape_data.root
+#
+# ZS-aware HBHEChannelInfo analyzer (HBHEChannelInfoPulseAnalyzer, TFileService
+# dir "anaInfo"), with the ZS-marked/dropped channels overlaid:
+#   python3 plot_from_fc.py --dir anaInfo --tag _chinfo --show-dropped \
+#       --digiraw Y.root --data edmHcalPulseShape_data.root
 
 import argparse, os
 import ROOT, numpy as np
@@ -35,6 +40,15 @@ parser.add_argument("--digiraw", default=None,
 parser.add_argument("--data", default=None,
                     help="ROOT file from hcalpulse_data_raw_cfg.py (real Run-3 data digis, "
                          "unpacked RAW, qCut=5000 fC) named edmHcalPulseShape_data.root")
+parser.add_argument("--dir", default="ana",
+                    help="TFileService directory (= analyzer module label) to read: 'ana' "
+                         "(HEPulseShapeAnalyzer, unsuppressed digis) or 'anaInfo' "
+                         "(HBHEChannelInfoPulseAnalyzer, ZS-aware HBHEChannelInfo)")
+parser.add_argument("--tag", default="",
+                    help="suffix appended to output PNG names, e.g. _chinfo -> HB_SiPM_8ts_chinfo.png")
+parser.add_argument("--show-dropped", action="store_true",
+                    help="overlay MC frac_vs_ts_dropped_{HB,HE} (isDropped(), i.e. ZS-marked, "
+                         "channels; anaInfo only)")
 args = parser.parse_args()
 
 def open_root(path):
@@ -47,8 +61,22 @@ def open_root(path):
     return f
 
 
+def get_obj(rfile, name):
+    """Get {args.dir}/{name}. The fallback to a top-level (directory-less) object
+    exists only for legacy HEPulseShapeAnalyzer files, so it is allowed only for
+    --dir ana: for anaInfo/anaInfoQIEPed it would silently substitute the
+    unsuppressed-digi (no ZS, no isDropped filtering) result."""
+    obj = rfile.Get(f"{args.dir}/{name}")
+    if obj:
+        return obj
+    if args.dir == "ana":
+        return rfile.Get(name)
+    print(f"[WARN] {args.dir}/{name} not in {rfile.GetName()} — skipped (no fallback outside --dir ana)")
+    return None
+
+
 def load_profile(rfile, name, required=True):
-    p = rfile.Get(f"ana/{name}") or rfile.Get(name)
+    p = get_obj(rfile, name)
     if not p or not p.InheritsFrom("TProfile"):
         if not required:
             return None
@@ -64,7 +92,7 @@ def load_profile(rfile, name, required=True):
 def load_shape_hist(rfile, name):
     """Load a shape_207/shape_208 TH1F (filled once per job by HEPulseShapeAnalyzer
     from HcalPulseShapes), unit-normalized. Returns None if not present."""
-    h = rfile.Get(f"ana/{name}") or rfile.Get(name)
+    h = get_obj(rfile, name)
     if not h or not h.InheritsFrom("TH1"):
         return None
     n = h.GetNbinsX()
@@ -94,8 +122,9 @@ def bin_shape_lut(s, nts, soi_ts):
     return data
 
 
-def make_plot(mc_digiraw, mc_gensim, data_digi, s207, s208, nts, soi_ts, outfile, subdet="HE"):
-    """Draw main + ratio panel. mc_digiraw, mc_gensim, data_digi, s207, s208 may be None.
+def make_plot(mc_digiraw, mc_gensim, data_digi, s207, s208, nts, soi_ts, outfile, subdet="HE",
+              mc_dropped=None):
+    """Draw main + ratio panel. mc_digiraw, mc_gensim, data_digi, s207, s208, mc_dropped may be None.
     subdet is "HE" or "HB" — used only in plot text/labels, all inputs must already
     be the matching subdet's histograms (selected by the caller)."""
     edges        = np.arange(nts + 1, dtype=float)
@@ -159,10 +188,15 @@ def make_plot(mc_digiraw, mc_gensim, data_digi, s207, s208, nts, soi_ts, outfile
         hep.histplot(mc_reco208, edges, ax=ax0, histtype="step",
                      color="green", linewidth=2, linestyle="--", label="MC reco shape 208")
         ymaxes.append(mc_reco208.max())
+    if mc_dropped is not None:
+        hep.histplot(mc_dropped, edges, ax=ax0, histtype="step",
+                     color="grey", linewidth=2, linestyle="--",
+                     label=r"MC digi, isDropped (ZS/bad) ($\Sigma Q$ > 5000 fC)")
+        ymaxes.append(mc_dropped.max())
 
     ax0.set_ylabel("Charge Fraction [A.U.]")
     ax0.set_xlim(0, nts)
-    ax0.set_ylim(0, max(ymaxes) * 1.6 if ymaxes else 1)
+    ax0.set_ylim(0, max(ymaxes) * 1.9 if ymaxes else 1)
     ax0.legend(loc="upper right", bbox_to_anchor=(0.98, 0.92), fontsize=18)
     info_text = "QCD FlatPt 15-3000, Run3 2026 noPU"
     if data_digi is not None:
@@ -171,7 +205,8 @@ def make_plot(mc_digiraw, mc_gensim, data_digi, s207, s208, nts, soi_ts, outfile
              transform=ax0.transAxes, fontsize=14, verticalalignment="top",
              bbox=dict(boxstyle="square,pad=0.3", facecolor="white",
                        edgecolor="black", linewidth=1))
-    if subdet == "HB":
+    if subdet == "HB" and args.dir == "ana":
+        # Only for the unsuppressed-digi analyzer: anaInfo applies the ZS flag.
         # qCut=5000 fC was tuned for HE (isotrack/slide-18 convention). In the
         # QCD FlatPt MC sample this pipeline normally runs on, genuine HB
         # energy deposits above 5000 fC are rare — the qCut-passing HB
@@ -267,7 +302,8 @@ s208 = load_shape_hist(shape_src, "shape_208") if shape_src else None
 for subdet in ("HE", "HB"):
     suffix = f"_{subdet}"
     has_suffixed = any(
-        rf is not None and (rf.Get(f"ana/frac_vs_ts{suffix}") or rf.Get(f"frac_vs_ts{suffix}"))
+        rf is not None and (rf.Get(f"{args.dir}/frac_vs_ts{suffix}")
+                            or (args.dir == "ana" and rf.Get(f"frac_vs_ts{suffix}")))
         for rf in (f_digiraw, f_gensim, f_data)
     )
     if not has_suffixed and subdet == "HB":
@@ -280,5 +316,12 @@ for subdet in ("HE", "HB"):
     mc8_digiraw = load_profile(f_digiraw, name8, required=False) if f_digiraw else None
     mc8_gensim  = load_profile(f_gensim,  name8, required=False) if f_gensim  else None
     data8_digi  = load_profile(f_data,    name8, required=False) if f_data    else None
+    mc8_dropped = None
+    if args.show_dropped:
+        mc_src = f_digiraw if f_digiraw else f_gensim
+        if mc_src:
+            mc8_dropped = load_profile(mc_src, f"frac_vs_ts_dropped{suffix}", required=False)
+        if mc8_dropped is None:
+            print(f"[WARN] --show-dropped: no frac_vs_ts_dropped{suffix} in {args.dir}/ of the MC input")
     make_plot(mc8_digiraw, mc8_gensim, data8_digi, s207, s208, nts=8, soi_ts=3,
-              outfile=f"{subdet}_SiPM_8ts.png", subdet=subdet)
+              outfile=f"{subdet}_SiPM_8ts{args.tag}.png", subdet=subdet, mc_dropped=mc8_dropped)

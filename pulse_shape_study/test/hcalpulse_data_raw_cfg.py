@@ -95,7 +95,34 @@ process.ana = cms.EDAnalyzer("HEPulseShapeAnalyzer",
     digiTag = cms.InputTag("hcalDigis"),
     qCut    = cms.double(5000.0))
 
+# --- HBHEChannelInfo path (ZS-aware) --------------------------------------
+# Unpacked data frames already carry the hardware zsMarkAndPass bit, so no
+# re-ZS is needed (unlike MC): HBHEPhase1Reconstructor with saveInfos=True and
+# dropZSmarkedPassed=True sets HBHEChannelInfo::isDropped() for them directly.
+process.load("RecoLocalCalo.HcalRecAlgos.hcalRecAlgoESProd_cfi")
+process.load("RecoLocalCalo.HcalRecAlgos.hcalChannelPropertiesESProd_cfi")
+from RecoLocalCalo.HcalRecProducers.HBHEPhase1Reconstructor_cfi import hbheprereco as _hbheprereco
+process.hbheInfo = _hbheprereco.clone(
+    digiLabelQIE11     = "hcalDigis",
+    processQIE8        = False,
+    saveInfos          = True,
+    saveDroppedInfos   = True,
+    dropZSmarkedPassed = True,
+    makeRecHits        = False)
+
+process.anaInfo = cms.EDAnalyzer("HBHEChannelInfoPulseAnalyzer",
+    infoTag     = cms.InputTag("hbheInfo"),
+    qCut        = cms.double(5000.0),
+    skipDropped = cms.bool(True))
+
+# Pedestal cross-check: same ZS flagging, QIE-only pedestal (see digiraw cfg).
+process.hbheInfoQIEPed = process.hbheInfo.clone(saveEffectivePedestal = False)
+process.anaInfoQIEPed = process.anaInfo.clone(infoTag = "hbheInfoQIEPed")
+
 process.unpack_step  = cms.Path(process.hcalDigis)
 process.endjob_step  = cms.EndPath(process.endOfProcess)
 process.ana_step     = cms.Path(process.ana)
-process.schedule     = cms.Schedule(process.unpack_step, process.ana_step, process.endjob_step)
+process.anaInfo_step = cms.Path(process.hbheInfo * process.anaInfo)
+process.anaInfoQIEPed_step = cms.Path(process.hbheInfoQIEPed * process.anaInfoQIEPed)
+process.schedule     = cms.Schedule(process.unpack_step, process.ana_step, process.anaInfo_step,
+                                    process.anaInfoQIEPed_step, process.endjob_step)
