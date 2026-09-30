@@ -28,7 +28,7 @@ plt.style.use(hep.style.CMS)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--digiraw", default=None, help="MC ROOT file (edmHcalPulseShape_digiraw.root)")
-parser.add_argument("--gensim",  default=None, help="MC ROOT file (edmHcalPulseShape_gensim.root), used if no --digiraw")
+parser.add_argument("--gensim",  default=None, help="MC ROOT file (edmHcalPulseShape_gensim.root), own column")
 parser.add_argument("--data",    default=None, help="data ROOT file (edmHcalPulseShape_data.root)")
 parser.add_argument("--out",     default="zs_pedestal_check.png")
 args = parser.parse_args()
@@ -55,9 +55,10 @@ def load(rfile, d, name):
     return p.values(), float(p.member("fBinEntries")[1])
 
 
-mc_file = open_root(args.digiraw) or open_root(args.gensim)
-data_file = open_root(args.data)
-columns = [(mc_file, "MC (QCD FlatPt 15-3000, noPU)"), (data_file, "Data (JetMET0, Run3 2026)")]
+# One column per input that is given: MC GEN-SIM-DIGI-RAW, MC GEN-SIM re-digi, data.
+columns = [(open_root(args.digiraw), "MC DIGI-RAW",  "MC (GEN-SIM-DIGI-RAW, QCD FlatPt 15-3000, noPU)"),
+           (open_root(args.gensim),  "MC GENSIM",    "MC (GEN-SIM re-digi, QCD FlatPt 15-3000, noPU)"),
+           (open_root(args.data),    "data",         "Data (JetMET0, Run3 2026)")]
 columns = [c for c in columns if c[0] is not None]
 if not columns:
     raise RuntimeError("No valid ROOT input files found.")
@@ -67,21 +68,21 @@ fig, axes = plt.subplots(len(subdets), len(columns), figsize=(10 * len(columns),
                          squeeze=False)
 edges = np.arange(9, dtype=float)
 
-print(f"{'sample':<6} {'subdet':<6} {'step':<14} {'N(sumQ>qCut, kept)':>20}  frac[TS3]  sum(frac[TS0-2])")
+print(f"{'sample':<11} {'subdet':<6} {'step':<14} {'N(sumQ>qCut, kept)':>20}  frac[TS3]  sum(frac[TS0-2])")
 for r, sd in enumerate(subdets):
-    for c, (rf, title) in enumerate(columns):
+    for c, (rf, tag, title) in enumerate(columns):
         ax = axes[r][c]
         ymax = 0.0
         for d, label, color, ls in STEPS:
             res = load(rf, d, f"frac_vs_ts_{sd}")
             if res is None:
-                print(f"{'MC' if rf is mc_file else 'data':<6} {sd:<6} {d:<14} {'(missing)':>20}")
+                print(f"{tag:<11} {sd:<6} {d:<14} {'(missing)':>20}")
                 continue
             frac, n = res
             hep.histplot(frac, edges, ax=ax, histtype="step", color=color, linestyle=ls, linewidth=2,
                          label=f"{label} (N={n:,.0f})")
             ymax = max(ymax, frac.max())
-            print(f"{'MC' if rf is mc_file else 'data':<6} {sd:<6} {d:<14} {n:>20,.0f}  {frac[3]:.4f}     {frac[:3].sum():+.4f}")
+            print(f"{tag:<11} {sd:<6} {d:<14} {n:>20,.0f}  {frac[3]:.4f}     {frac[:3].sum():+.4f}")
         ax.axhline(0, color="grey", linewidth=0.8)
         ax.set_xlim(0, 8)
         ax.set_ylim(min(-0.02, ax.get_ylim()[0]), max(ymax, 0.1) * 1.6)
