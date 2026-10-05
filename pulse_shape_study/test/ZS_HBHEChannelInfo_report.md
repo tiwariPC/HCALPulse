@@ -23,6 +23,14 @@ and (2) run on `HBHEChannelInfo` instead of the digi collection
   - The pulse only appears once the **effective pedestal** (QIE pedestal + SiPM
     dark current) is subtracted. `HBHEChannelInfo` provides it; the old digi-based
     analysis subtracted only the QIE pedestal.
+- **Data digi agrees with shape 207 once the LUT timing phase is fitted.**
+  - With the fixed convention (LUT peak at the centre of the SOI bin), data looks
+    much later or broader than 207.
+  - Fitting the phase (+7 ns for HB, +6 ns for HE) and removing the flat pre-SOI
+    baseline brings data onto 207 to < 1 % rms per time slice. This is the same
+    level at which MC digi matches 208 (0 ns shift).
+  - With only 8 integrated time slices, this shows consistency, not a unique
+    shape determination (section 3.4).
 
 ## 1. Before: old digi-based analysis
 
@@ -137,7 +145,10 @@ the summed fraction in time slices 0–2.
 HE is only mildly affected: the peak goes from 0.54 to 0.58. In data, ZS changes
 nothing and the effective pedestal sharpens the peak.
 
-### 3.3 After: final comparison with the target shapes
+### 3.3 After: comparison with the target shapes, fixed LUT phase
+
+Here each LUT is integrated into 25 ns slices with its peak placed at the centre of the
+SOI bin, the convention used by all earlier versions of these plots.
 
 <p align="center">
   <img src="HB_SiPM_8ts_chinfo.png" width="45%" alt="HB, HBHEChannelInfo with ZS flags">
@@ -163,12 +174,66 @@ On these plots:
 - **MC digi agrees with shape 208 to within a few %** in both HB and HE.
 - **Both MC and data put less charge in the SOI and more in time slice 4 than shape
   207.** This is the known shape mismatch under study.
-- **Data HB is noticeably later or broader than MC.** See caveats 1–3.
+- **Data is noticeably later or broader than shape 207 at this fixed phase.** Section
+  3.4 shows this is almost entirely a timing phase plus a flat baseline, not a shape
+  difference.
+- **The grey dropped HB curve starts at time slice 4 by construction.**
+  - The Run-3 ZS keeps a channel only if the ADC count in the SOI passes the
+    channel's threshold.
+  - Channels that were dropped and still pass the charge cut therefore have almost
+    no charge in the SOI, so their charge sits in later time slices.
+  - It is 43 channels and is not part of the result.
 - **The dropped HE channels above the cut (grey) have a genuine pulse shape.** They are
   probably tagged bad in the database rather than ZS noise; `isDropped()` does not
   separate the two.
 
-### 3.4 No-contamination checks
+### 3.4 Comparison with fitted LUT phase and baseline subtraction
+
+The fixed convention in 3.3 is an assumption, not a measurement. If the data pulses
+arrive at a different phase, charge moves between time slices 3 and 4, and the
+fractions disagree even when the shape is the same. The plots below:
+
+- **fit the time shift of each LUT** (1 ns steps, ±40 ns, rms over time slices ≥ SOI):
+  shape 207 to data digi, shape 208 to MC digi;
+- **subtract the flat pre-SOI baseline** (mean of time slices 0–2) from each digi
+  curve and renormalize. This baseline comes from pileup or residual pedestal, and
+  the LUTs have none.
+
+<p align="center">
+  <img src="HB_SiPM_8ts_chinfo_fit.png" width="45%" alt="HB, fitted LUT phase, baseline subtracted">
+  <img src="HE_SiPM_8ts_chinfo_fit.png" width="45%" alt="HE, fitted LUT phase, baseline subtracted">
+</p>
+
+| | Fitted shift | rms per time slice | Baseline subtracted (per time slice) |
+|---|---|---|---|
+| HB: shape 207 vs data digi | **+7 ns** | 0.008 | data +0.024 |
+| HE: shape 207 vs data digi | **+6 ns** | 0.009 | data −0.004 |
+| HB: shape 208 vs MC digi | 0 ns | 0.007 | MC +0.004 |
+| HE: shape 208 vs MC digi | 0 ns | 0.005 | MC +0.001 |
+
+For comparison, the rms of data vs 207 at the fixed phase is 0.127 (HB) and 0.078 (HE).
+
+HB time slices 3–5 after the fit:
+
+| | TS3 | TS4 | TS5 |
+|---|---|---|---|
+| Data digi | 0.468 | 0.395 | 0.098 |
+| Shape 207 (+7 ns) | 0.475 | 0.389 | 0.085 |
+
+- **Data matches shape 207 as closely as MC matches shape 208.** The data ratio in the
+  first ratio panel is within about ±0.1 for both HB and HE.
+- **The fitted shift for 208 against MC is exactly 0 ns.** The fixed convention is
+  therefore correct for MC, which is why the MC curves look the same in 3.3 and 3.4.
+- **Data pulses arrive 6–7 ns later than the fixed convention assumes.** This could be
+  real HB/HE timing in 2026 data versus MC, a time-slew effect from a different charge
+  distribution, or pileup (caveats 1, 2 and 6).
+- **The phase fit and the shape are not independent.** With only 8 integrated 25 ns
+  bins, a shift can absorb part of a shape difference: shape 208 also fits HE data at
+  +2 ns with rms 0.010. These plots show that data is consistent with 207, not that 207
+  is uniquely the right shape. Validating the shape needs the phase from an
+  independent source (caveat 6).
+
+### 3.5 No-contamination checks
 
 `check_outputs.py` runs over MC/data × HB/HE × `anaInfo` / `anaInfoQIEPed`, which is
 24 checks. **All pass.** It checks that:
@@ -196,6 +261,11 @@ On these plots:
 5. **The charge cut now applies to dark-current-subtracted charge.** The kept channels
    have a median raw energy of ~4–7 GeV, consistent with the 4 GeV isotrack
    convention. The cut could be restated as an explicit energy cut.
+6. **The LUT timing phase needs an independent reference.** The +6–7 ns data offset in
+   section 3.4 comes from the fit itself, so it is partly degenerate with the shape.
+   It should be checked against the phase convention reco uses when placing the
+   template in time (Mahi), or against the TDC timing that `HBHEChannelInfo` provides
+   in data. Both would allow 207 and 208 to be compared at a fixed, measured phase.
 
 ## 5. Reproducing
 
@@ -208,7 +278,7 @@ cd /afs/cern.ch/work/p/ptiwari/public/hcal/default/CMSSW_17_0_0_pre2/src/HCALPul
 |---|---|
 | `plugins/HBHEChannelInfoPulseAnalyzer.cc` | new analyzer reading `HBHEChannelInfo` |
 | `test/hcalpulse_gensimdigiraw_cfg.py`, `hcalpulse_gensim_cfg.py`, `hcalpulse_data_raw_cfg.py` | ZS flags + `saveInfos = True` reconstructor clones |
-| `test/plot_from_fc.py` | `--dir anaInfo --tag _chinfo --show-dropped` |
+| `test/plot_from_fc.py` | fixed phase: `--dir anaInfo --tag _chinfo --show-dropped`; fitted: `--dir anaInfo --tag _chinfo_fit --fit-phase --subtract-baseline` |
 | `test/plot_zs_pedestal_check.py` | three-step ZS vs pedestal plot |
 | `test/check_outputs.py` | no-contamination checks |
 | `test/run_all.sh` | full workflow; logs in `test/logs/` |

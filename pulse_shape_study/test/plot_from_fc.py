@@ -49,6 +49,13 @@ parser.add_argument("--tag", default="",
 parser.add_argument("--show-dropped", action="store_true",
                     help="overlay MC frac_vs_ts_dropped_{HB,HE} (isDropped(), i.e. ZS-marked, "
                          "channels; anaInfo only)")
+parser.add_argument("--fit-phase", action="store_true",
+                    help="fit the time shift of each LUT instead of assuming its peak at the SOI-bin "
+                         "centre: shape 207 is fitted to data digi, shape 208 to MC digi "
+                         "(1 ns steps, +-40 ns, rms over TS >= SOI); fitted shifts shown in the legend")
+parser.add_argument("--subtract-baseline", action="store_true",
+                    help="subtract the mean pre-SOI fraction (TS0..SOI-1, pileup/residual pedestal) "
+                         "from each digi curve and renormalize before comparing with the LUTs")
 args = parser.parse_args()
 
 def open_root(path):
@@ -101,16 +108,19 @@ def load_shape_hist(rfile, name):
 
 
 def _safe_ratio(num, den):
-    """(num/den) - 1, with den<=0 bins set to nan instead of raising divide warnings."""
+    """(num/den) - 1. Bins where either curve is ~0 (pre-SOI: LUT = 0, digi ~ 0) are set to nan —
+    the ratio is meaningless there and would only draw off-scale spikes."""
+    valid = (den > 1e-3) & (num > 1e-3)
     with np.errstate(divide="ignore", invalid="ignore"):
-        ratio = np.divide(num, den, out=np.full_like(num, np.nan, dtype=float), where=den > 0)
+        ratio = np.divide(num, den, out=np.full_like(num, np.nan, dtype=float), where=valid)
     return ratio - 1.0
 
 
-def bin_shape_lut(s, nts, soi_ts):
-    """Integrate a 1 ns/bin shape LUT into nts 25 ns slices, peak aligned to SOI bin centre."""
+def bin_shape_lut(s, nts, soi_ts, shift_ns=0):
+    """Integrate a 1 ns/bin shape LUT into nts 25 ns slices, peak aligned to SOI bin centre,
+    then moved by shift_ns (> 0 = later)."""
     s_peak_ns = int(np.argmax(s))
-    offset_ns = s_peak_ns - (soi_ts * 25 + 12)
+    offset_ns = s_peak_ns - (soi_ts * 25 + 12) - shift_ns
     data = np.zeros(nts)
     for ts in range(nts):
         i_lo = max(0,   ts * 25       + offset_ns)
@@ -122,6 +132,24 @@ def bin_shape_lut(s, nts, soi_ts):
     return data
 
 
+def fit_phase(s, meas, nts, soi_ts, max_shift_ns=40):
+    """Shift (ns) of LUT s that best matches the measured fractions meas (rms over TS >= SOI)."""
+    best_shift, best_rms = 0, np.inf
+    for shift in range(-max_shift_ns, max_shift_ns + 1):
+        rms = np.sqrt(np.mean((bin_shape_lut(s, nts, soi_ts, shift)[soi_ts:] - meas[soi_ts:]) ** 2))
+        if rms < best_rms:
+            best_shift, best_rms = shift, rms
+    return best_shift, best_rms
+
+
+def subtract_baseline(frac, soi_ts):
+    """Remove the mean pre-SOI fraction (flat baseline) from every TS and renormalize.
+    Returns (corrected fractions, baseline per TS)."""
+    c = frac[:soi_ts].mean()
+    out = frac - c
+    return out / out.sum(), c
+
+
 def make_plot(mc_digiraw, mc_gensim, data_digi, s207, s208, nts, soi_ts, outfile, subdet="HE",
               mc_dropped=None):
     """Draw main + ratio panel. mc_digiraw, mc_gensim, data_digi, s207, s208, mc_dropped may be None.
@@ -131,11 +159,32 @@ def make_plot(mc_digiraw, mc_gensim, data_digi, s207, s208, nts, soi_ts, outfile
     edge_ticks   = np.arange(nts + 1, dtype=float)
     centre_ticks = np.arange(nts) + 0.5
 
-    data       = bin_shape_lut(s207, nts, soi_ts) if s207 is not None else None
-    mc_reco208 = bin_shape_lut(s208, nts, soi_ts) if s208 is not None else None
+    # optional flat-baseline removal on the measured digi curves (not on the LUTs)
+    baselines = {}
+    if args.subtract_baseline:
+        if mc_digiraw is not None: mc_digiraw, baselines["MC DIGI-RAW"] = subtract_baseline(mc_digiraw, soi_ts)
+        if mc_gensim  is not None: mc_gensim,  baselines["MC GEN-SIM"]  = subtract_baseline(mc_gensim, soi_ts)
+        if data_digi  is not None: data_digi,  baselines["Data"]        = subtract_baseline(data_digi, soi_ts)
 
     # ratio denominator for the MC-digi-based ratio panels
     mc_ref = mc_digiraw if mc_digiraw is not None else mc_gensim
+
+    # LUT phase: fixed convention (peak at SOI-bin centre) or fitted to the matching digi curve
+    shift207 = shift208 = 0
+    if args.fit_phase:
+        if s207 is not None and data_digi is not None:
+            shift207, rms207 = fit_phase(s207, data_digi, nts, soi_ts)
+            print(f"  [{subdet}] shape 207 fitted to data digi: shift {shift207:+d} ns, rms {rms207:.3f}")
+        if s208 is not None and mc_ref is not None:
+            shift208, rms208 = fit_phase(s208, mc_ref, nts, soi_ts)
+            print(f"  [{subdet}] shape 208 fitted to MC digi:   shift {shift208:+d} ns, rms {rms208:.3f}")
+    label207 = "Data shape 207" + (f" (shift {shift207:+d} ns, fit to data digi)"
+                                   if args.fit_phase and data_digi is not None else "")
+    label208 = "MC reco shape 208" + (f" (shift {shift208:+d} ns, fit to MC digi)"
+                                      if args.fit_phase and mc_ref is not None else "")
+
+    data       = bin_shape_lut(s207, nts, soi_ts, shift207) if s207 is not None else None
+    mc_reco208 = bin_shape_lut(s208, nts, soi_ts, shift208) if s208 is not None else None
 
     # ratio panel 1: MC digi, data digi and shape 208 vs shape 207 (data LUT) baseline
     have_ratio1 = data is not None and (mc_ref is not None or mc_reco208 is not None or data_digi is not None)
@@ -182,11 +231,11 @@ def make_plot(mc_digiraw, mc_gensim, data_digi, s207, s208, nts, soi_ts, outfile
         ymaxes.append(data_digi.max())
     if data is not None:
         hep.histplot(data, edges, ax=ax0, histtype="step",
-                     color="red", linewidth=2, label="Data shape 207")
+                     color="red", linewidth=2, label=label207)
         ymaxes.append(data.max())
     if mc_reco208 is not None:
         hep.histplot(mc_reco208, edges, ax=ax0, histtype="step",
-                     color="green", linewidth=2, linestyle="--", label="MC reco shape 208")
+                     color="green", linewidth=2, linestyle="--", label=label208)
         ymaxes.append(mc_reco208.max())
     if mc_dropped is not None:
         hep.histplot(mc_dropped, edges, ax=ax0, histtype="step",
@@ -205,6 +254,15 @@ def make_plot(mc_digiraw, mc_gensim, data_digi, s207, s208, nts, soi_ts, outfile
              transform=ax0.transAxes, fontsize=14, verticalalignment="top",
              bbox=dict(boxstyle="square,pad=0.3", facecolor="white",
                        edgecolor="black", linewidth=1))
+    # Comparison method, in its own box below the legend (empty pre-SOI region)
+    method_text = "LUT phase:\n" + ("  fitted" if args.fit_phase else "  peak at SOI-bin\n  centre (fixed)")
+    if baselines:
+        method_text += "\nPre-SOI baseline\nsubtracted (per TS):\n" + "\n".join(
+            f"  {k} {v:+.3f}" for k, v in baselines.items())
+    ax0.text(0.02, 0.50, method_text,
+             transform=ax0.transAxes, fontsize=11, verticalalignment="top",
+             bbox=dict(boxstyle="square,pad=0.3", facecolor="white",
+                       edgecolor="grey", linewidth=1))
     if subdet == "HB" and args.dir == "ana":
         # Only for the unsuppressed-digi analyzer: anaInfo applies the ZS flag.
         # qCut=5000 fC was tuned for HE (isotrack/slide-18 convention). In the

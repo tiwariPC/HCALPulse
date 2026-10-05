@@ -82,6 +82,10 @@ run_logged plot_ana python3 plot_from_fc.py $MC_ARGS
 step "plots: ZS-aware HBHEChannelInfo (anaInfo/) -> HB/HE_SiPM_8ts_chinfo.png"
 run_logged plot_anaInfo python3 plot_from_fc.py --dir anaInfo --tag _chinfo --show-dropped $MC_ARGS
 
+step "plots: anaInfo/, LUT phase fitted + pre-SOI baseline subtracted -> HB/HE_SiPM_8ts_chinfo_fit.png"
+run_logged plot_anaInfo_fit python3 plot_from_fc.py --dir anaInfo --tag _chinfo_fit \
+  --fit-phase --subtract-baseline $MC_ARGS
+
 step "plots: ZS vs pedestal cross-check -> zs_pedestal_check.png"
 run_logged plot_zsped python3 plot_zs_pedestal_check.py \
   --digiraw edmHcalPulseShape_digiraw.root --data edmHcalPulseShape_data.root
@@ -93,4 +97,4 @@ if [ "$DO_GENSIM" = 1 ]; then CHECK_FILES="$CHECK_FILES edmHcalPulseShape_gensim
 python3 check_outputs.py $CHECK_FILES | tee "$LOGDIR/check_${STAMP}.log"
 
 step "done. Outputs in $TESTDIR:"
-ls -1 HB_SiPM_8ts*.png HE_SiPM_8ts*.png zs_pedestal_check.png
+ls -1 HB_SiPM_8ts*.png HE_SiPM_8ts*.png zs_pedestal_check.png  # *_8ts, *_chinfo, *_chinfo_fit
