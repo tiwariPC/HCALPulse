@@ -5,8 +5,10 @@
 <use name="CommonTools/UtilAlgos"/>
 <use name="DataFormats/HcalDigi"/>
 <use name="DataFormats/HcalDetId"/>
+<use name="DataFormats/HcalRecHit"/>
 <use name="CalibFormats/HcalObjects"/>
 <use name="CondFormats/HcalObjects"/>
+<use name="CondFormats/DataRecord"/>
 <use name="CalibCalorimetry/HcalAlgos"/>
 <use name="root"/>
 <flags EDM_PLUGIN="1"/>

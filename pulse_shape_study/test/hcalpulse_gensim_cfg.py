@@ -1,6 +1,10 @@
 # cmsRun hcalpulse_gensim_cfg.py
-# Reads GEN-SIM, runs digitisation_step (MixingModule noPU), then HEPulseShapeAnalyzer.
-# Output: edmHcalPulseShape_gensim.root
+# Reads GEN-SIM, runs digitisation_step (MixingModule noPU), then HEPulseShapeAnalyzer
+# (ana/) and the ZS-aware HBHEChannelInfoPulseAnalyzer (anaInfo/).
+# The digitizer uses the shape 206 compiled into the local HcalPulseShapes.cc;
+# env HCAL_SHAPE206_VARIANT=y11|sipm|both selects the tuned variant (default y11).
+# Output: edmHcalPulseShape_gensim.root (override with env HCALPULSE_OUT)
+import os
 import FWCore.ParameterSet.Config as cms
 from Configuration.Eras.Era_Run3_2026_cff import Run3_2026
 
@@ -53,18 +57,55 @@ process.source = cms.Source("PoolSource",
 )
 
 process.TFileService = cms.Service("TFileService",
-    fileName = cms.string("edmHcalPulseShape_gensim.root"))
+    fileName = cms.string(os.environ.get("HCALPULSE_OUT", "edmHcalPulseShape_gensim.root")))
 
 process.ana = cms.EDAnalyzer("HEPulseShapeAnalyzer",
     digiTag = cms.InputTag("simHcalUnsuppressedDigis", "HBHEQIE11DigiCollection"),
     qCut    = cms.double(5000.0))
 
-process.digitisation_step = cms.Path(process.pdigi_valid)
-process.ana_step          = cms.Path(process.ana)
-process.endjob_step       = cms.EndPath(process.endOfProcess)
+# --- HBHEChannelInfo path (ZS-aware) --------------------------------------
+# The standard simHcalDigis from pdigi_valid uses markAndPass=False (ZS'd
+# channels removed, never flagged), so re-run the same realistic ZS on
+# simHcalUnsuppressedDigis with markAndPass=True, then HBHEPhase1Reconstructor
+# with saveInfos=True: its dropZSmarkedPassed logic sets
+# HBHEChannelInfo::isDropped() for flagged frames. saveDroppedInfos=True keeps
+# them in the collection so HBHEChannelInfoPulseAnalyzer can profile them
+# separately.
+from SimCalorimetry.HcalZeroSuppressionProducers.hcalDigisRealistic_cfi import simHcalDigis as _simHcalDigis
+process.simHcalDigisMP = _simHcalDigis.clone(markAndPass = True)
+
+process.load("RecoLocalCalo.HcalRecAlgos.hcalRecAlgoESProd_cfi")
+process.load("RecoLocalCalo.HcalRecAlgos.hcalChannelPropertiesESProd_cfi")
+from RecoLocalCalo.HcalRecProducers.HBHEPhase1Reconstructor_cfi import hbheprereco as _hbheprereco
+process.hbheInfo = _hbheprereco.clone(
+    digiLabelQIE11     = "simHcalDigisMP:HBHEQIE11DigiCollection",
+    processQIE8        = False,
+    saveInfos          = True,
+    saveDroppedInfos   = True,
+    dropZSmarkedPassed = True,
+    makeRecHits        = False)
+
+process.anaInfo = cms.EDAnalyzer("HBHEChannelInfoPulseAnalyzer",
+    infoTag     = cms.InputTag("hbheInfo"),
+    qCut        = cms.double(5000.0),
+    skipDropped = cms.bool(True))
+
+# Pedestal cross-check: same ZS flagging, but QIE-only pedestal (no SiPM dark
+# current) like HEPulseShapeAnalyzer — the Run-3 era default is
+# saveEffectivePedestal=True.
+process.hbheInfoQIEPed = process.hbheInfo.clone(saveEffectivePedestal = False)
+process.anaInfoQIEPed = process.anaInfo.clone(infoTag = "hbheInfoQIEPed")
+
+process.digitisation_step  = cms.Path(process.pdigi_valid)
+process.ana_step           = cms.Path(process.ana)
+process.anaInfo_step       = cms.Path(process.simHcalDigisMP * process.hbheInfo * process.anaInfo)
+process.anaInfoQIEPed_step = cms.Path(process.simHcalDigisMP * process.hbheInfoQIEPed * process.anaInfoQIEPed)
+process.endjob_step        = cms.EndPath(process.endOfProcess)
 
 process.schedule = cms.Schedule(
     process.digitisation_step,
     process.ana_step,
+    process.anaInfo_step,
+    process.anaInfoQIEPed_step,
     process.endjob_step,
 )
