@@ -32,10 +32,15 @@ convolved with the SiPM response. Three tuned versions were digitized:
   fractions also become negative (HB −0.043), which means the effective pedestal
   is over-subtracted. The most likely cause is that the SiPM dark-current
   simulation also uses shape 206 (section 4.2).
-- **Against shape 207 at the fixed phase, iterC7 looks worse than the default shape.**
-  This is a phase effect, not a shape effect. The fit loop aligned 207 about 6 ns
-  later than the plotting convention, the same offset the data prefers (+6 ns HE,
-  +7 ns HB) (section 2.3). At that phase iterC7 is clearly better.
+- **With shape 207 placed as stored in CMSSW, iterC7 is clearly the best match to 207.**
+  - The first set of plots placed each LUT's peak at the SOI-bin centre. That is an
+    implicit shift of −6 ns for 207 and −3 ns for 208 (section 2.3).
+  - With the LUTs unshifted (section 4.4), which is also the placement the fit loop
+    used as its target, the rms per time slice to 207 is **0.027 (HB) / 0.023 (HE)**
+    for `y11`. That compares with 0.044 / 0.043 for the default shape and
+    0.15–0.17 for `sipm` and `both`.
+  - In the peak-centred plots iterC7 looked worse than the default shape. That was
+    the −6 ns placement, not the shape.
 - **The "isDropped" peak at TS5 in `HB_SiPM_8ts_chinfo_{sipm,both}.png` was a single
   channel.** Only 1 dropped HB channel passes the charge cut in those variants. The
   curve is now hidden below 20 channels, and its legend shows the channel count.
@@ -123,15 +128,21 @@ Conclusion: the 2-component LogNormal has a structural ceiling for this target.
 - **The fit loop** (`hcal_pulse_shapes._shift_to_soi`) puts the 207 LUT time origin
   at the SOI leading edge, so the 207 peak (~18 ns) lies 18 ns into the SOI. In 8
   time slices this gives 207 = 51.8 / 35.4 / 8.0 / 3.2 / 1.7 % (TS3–TS7).
-- **The plots** (`plot_from_fc.py`, fixed phase) put the 207 peak at the SOI-bin centre
-  (12.5 ns), giving 65.9 / 23.7 / 6.3 / 2.7 / 1.5 %.
-- **The two differ by about 6 ns.** Fitting the 207 phase to the data digi gives
-  +6 ns (HE) and +7 ns (HB) relative to the plot convention (section 4.4). This
-  reproduces the fit-loop alignment (HE: 50.8 / 36.2 %).
+- **The first set of plots** (`plot_from_fc.py`, default `--lut-align peak-centre`)
+  put the 207 peak at the SOI-bin centre (12 ns into the SOI), giving
+  65.9 / 23.7 / 6.3 / 2.7 / 1.5 %. This shifts 207 by **−6 ns** relative to the array
+  as stored, and 208 (peak at bin 15) by −3 ns.
+- **`plot_from_fc.py --lut-align soi-start`** places the LUTs as stored, bin 0 at the
+  SOI start. This is the fit-loop placement. Integrating the 1 ns bins directly gives
+  207 = 50.8 / 36.2 / 8.2 / 3.2 / 1.7 % (section 4.4); the 1-point difference from the
+  fit loop's 51.8 / 35.4 % comes from its interpolation onto a 0.5 ns grid.
+- **Fitting the 207 phase to the data digi** gives +6 ns (HE) and +7 ns (HB) relative
+  to the peak-centred placement (section 4.5), i.e. 0 ns and +1 ns relative to the
+  stored array.
 
-The fit loop therefore tuned 206 towards 207 at the phase that data prefers. In the
-fixed-phase plots iterC7 appears to move *away* from 207, but this is only a phase
-effect, not a shape effect.
+The fit loop therefore tuned 206 towards 207 as stored, which is also where the data
+sits. In the peak-centred plots iterC7 appears to move *away* from 207; this is only
+the −6 ns placement, not a shape effect.
 
 ## 3. Implementation
 
@@ -219,9 +230,11 @@ pedestal):
   keeps 1.01 M channels, with the flat curve of the old analysis (pre-SOI 0.346).
   `sipm` keeps only 33.8 k (pre-SOI 0.099).
 
-### 4.3 Comparison with the target shapes, fixed LUT phase
+### 4.3 Comparison with the target shapes, peak-centred LUTs
 
-Each LUT is integrated into 25 ns slices with its peak at the SOI-bin centre.
+Each LUT is integrated into 25 ns slices with its peak at the SOI-bin centre. This is
+an implicit shift of **−6 ns for 207** and **−3 ns for 208** relative to the arrays as
+stored (section 2.3); section 4.4 shows the same plots without it.
 
 On these plots:
 
@@ -253,7 +266,7 @@ On these plots:
 
 Charge fraction in the SOI (time slice 3) / time slice 4, `anaInfo`:
 
-| | Shape 207 (fixed) | MC reco 208 | MC default | `y11` | `sipm` | `both` | Data digi |
+| | Shape 207 (−6 ns) | MC reco 208 (−3 ns) | MC default | `y11` | `sipm` | `both` | Data digi |
 |---|---|---|---|---|---|---|---|
 | HB | 0.66 / 0.24 | 0.59 / 0.30 | 0.57 / 0.28 | 0.53 / 0.31 | 0.84 / 0.17 | 0.80 / 0.20 | 0.40 / 0.34 |
 | HE | 0.66 / 0.24 | 0.59 / 0.30 | 0.58 / 0.30 | 0.54 / 0.32 | 0.78 / 0.17 | 0.75 / 0.20 | 0.54 / 0.36 |
@@ -262,9 +275,96 @@ Charge fraction in the SOI (time slice 3) / time slice 4, `anaInfo`:
   data.
 - **`sipm` and `both` move it the opposite way, by a large amount.**
 
-### 4.4 Comparison with fitted LUT phase and baseline subtraction
+### 4.4 Comparison with unshifted LUTs (array as stored)
 
-As in `default/`, these plots:
+**What changes.** Shapes 207 and 208 are lists of 250 numbers, one per nanosecond. To
+compare them with the digis, each list is placed on the time axis and summed in 25 ns
+time slices. Where the list starts decides how its charge splits between time slices
+3 and 4:
+
+- **Peak-centred (section 4.3):** the list is moved so that its peak sits in the middle
+  of time slice 3. This moves 207 6 ns earlier and 208 3 ns earlier than stored.
+- **Unshifted (this section):** the list starts at the beginning of time slice 3
+  (75 ns), exactly as stored in CMSSW
+  ([`HcalPulseShapes.cc`](https://github.com/cms-sw/cmssw/blob/master/CalibCalorimetry/HcalAlgos/src/HcalPulseShapes.cc#L327)).
+  This is also how the fit loop places 207 for its target (section 2.3).
+
+Only the red (207) and green (208) curves move between the two placements; all MC and
+data curves are identical.
+
+**How the LUTs change** (charge fraction in time slices 3 / 4 / 5):
+
+| | Peak-centred | Unshifted |
+|---|---|---|
+| Shape 207 | 0.66 / 0.24 / 0.06 | **0.51 / 0.36 / 0.08** |
+| Shape 208 | 0.59 / 0.30 / 0.07 | **0.51 / 0.36 / 0.08** |
+
+In each pair below, the left plot is peak-centred and the right plot is unshifted.
+
+**`y11` (Y11 iterC7 + SiPM 2016), HB**
+<p align="center">
+  <img src="HB_SiPM_8ts_chinfo_y11.png" width="45%" alt="HB, y11, peak-centred LUTs">
+  <img src="HB_SiPM_8ts_chinfo_y11_unshifted.png" width="45%" alt="HB, y11, unshifted LUTs">
+</p>
+
+**`y11`, HE**
+<p align="center">
+  <img src="HE_SiPM_8ts_chinfo_y11.png" width="45%" alt="HE, y11, peak-centred LUTs">
+  <img src="HE_SiPM_8ts_chinfo_y11_unshifted.png" width="45%" alt="HE, y11, unshifted LUTs">
+</p>
+
+**`sipm` (Y11 original + SiPM iterB4), HB**
+<p align="center">
+  <img src="HB_SiPM_8ts_chinfo_sipm.png" width="45%" alt="HB, sipm, peak-centred LUTs">
+  <img src="HB_SiPM_8ts_chinfo_sipm_unshifted.png" width="45%" alt="HB, sipm, unshifted LUTs">
+</p>
+
+**`sipm`, HE**
+<p align="center">
+  <img src="HE_SiPM_8ts_chinfo_sipm.png" width="45%" alt="HE, sipm, peak-centred LUTs">
+  <img src="HE_SiPM_8ts_chinfo_sipm_unshifted.png" width="45%" alt="HE, sipm, unshifted LUTs">
+</p>
+
+**`both` (Y11 iterC7 + SiPM iterB4), HB**
+<p align="center">
+  <img src="HB_SiPM_8ts_chinfo_both.png" width="45%" alt="HB, both, peak-centred LUTs">
+  <img src="HB_SiPM_8ts_chinfo_both_unshifted.png" width="45%" alt="HB, both, unshifted LUTs">
+</p>
+
+**`both`, HE**
+<p align="center">
+  <img src="HE_SiPM_8ts_chinfo_both.png" width="45%" alt="HE, both, peak-centred LUTs">
+  <img src="HE_SiPM_8ts_chinfo_both_unshifted.png" width="45%" alt="HE, both, unshifted LUTs">
+</p>
+
+**How close each curve is to shape 207** (rms difference per time slice over time
+slices 3–7, no baseline subtraction; lower is better):
+
+| | HB, peak-centred | HB, unshifted | HE, peak-centred | HE, unshifted |
+|---|---|---|---|---|
+| MC, default shape | 0.048 | 0.044 | 0.046 | 0.043 |
+| MC, `y11` | 0.068 | **0.027** | 0.067 | **0.023** |
+| MC, `sipm` | 0.088 | 0.174 | 0.065 | 0.152 |
+| MC, `both` | 0.068 | 0.152 | **0.044** | 0.131 |
+| Data digi | 0.127 | 0.050 | 0.078 | **0.013** |
+
+**What this shows:**
+
+- **With 207 unshifted, `y11` is clearly the best tuned shape.** Its rms to 207 is about
+  40 % lower than the default shape's in HB and almost 50 % lower in HE. This matches
+  its ranking against data in section 4.5, here without any fitted phase.
+- **The peak-centred plots gave the wrong ranking.** There `y11` looked worse than the
+  default shape and `both` looked best in HE. The −6 ns shift moves 207's charge into
+  the SOI, which favours the too-fast `sipm`/`both` pulses.
+- **`sipm` and `both` are 3–4 times further from 207 than the default shape.** Their
+  pulses put 0.75–0.84 of the charge in the SOI, against 0.51 for 207.
+- **Data matches the unshifted 207 too:** within a few % in HE. HB data has a lower SOI
+  fraction (0.40), partly because of its flat +0.024 per time slice baseline, which is
+  not subtracted here.
+
+### 4.5 Comparison with fitted LUT phase and baseline subtraction
+
+As in `default/`, these plots start from the peak-centred placement and:
 
 - fit the time shift of each LUT (1 ns steps, ±40 ns, rms over time slices ≥ SOI):
   shape 207 to data digi, shape 208 to MC with the default shape (DIGI-RAW);
@@ -290,16 +390,22 @@ Fitted shifts: shape 207 vs data digi is **+7 ns (HB)** and **+6 ns (HE)**, with
 0.007 / 0.005. These are identical to `default/`, since 207, 208, the data and the
 DIGI-RAW MC are the same.
 
+The shifts are relative to the peak-centred placement. Relative to the arrays as
+stored (section 4.4), 207 vs data is **+1 ns (HB) and 0 ns (HE)**, and 208 vs default
+MC is **−3 ns**.
+
 rms per time slice (time slices ≥ SOI, baseline subtracted), lower is better:
 
 | | MC default | `y11` | `sipm` | `both` |
 |---|---|---|---|---|
 | HB vs data digi | 0.069 | **0.049** | 0.171 | 0.151 |
 | HB vs 207 (+7 ns) | 0.065 | **0.045** | 0.166 | 0.146 |
-| HB vs 207 (fixed phase) | 0.048 | 0.068 | 0.088 | 0.068 |
+| HB vs 207 (peak-centred, no baseline subtraction) | 0.048 | 0.068 | 0.088 | 0.068 |
+| HB vs 207 (unshifted, no baseline subtraction) | 0.044 | **0.027** | 0.174 | 0.152 |
 | HE vs data digi | 0.035 | **0.015** | 0.138 | 0.118 |
 | HE vs 207 (+6 ns) | 0.044 | **0.023** | 0.147 | 0.126 |
-| HE vs 207 (fixed phase) | 0.046 | 0.067 | 0.065 | 0.044 |
+| HE vs 207 (peak-centred, no baseline subtraction) | 0.046 | 0.067 | 0.065 | 0.044 |
+| HE vs 207 (unshifted, no baseline subtraction) | 0.043 | **0.023** | 0.152 | 0.131 |
 
 TS4/TS3 ratio after baseline subtraction:
 
@@ -316,7 +422,7 @@ TS4/TS3 ratio after baseline subtraction:
 - **iterB4's shape is fixed relative to 208.** Its best 208 shift is −7 ns with rms
   0.03 in HB, so it is a much faster pulse, not a re-phased default pulse.
 
-### 4.5 The isDropped curve at time slice 5 (HB `sipm` / `both`)
+### 4.6 The isDropped curve at time slice 5 (HB `sipm` / `both`)
 
 `frac_vs_ts_dropped_HB` in `sipm` and `both` contains **one** channel above 5000 fC.
 That single pulse has 99–103 % of its charge in TS5, so it is a late or out-of-time
@@ -330,8 +436,8 @@ the DB. `plot_from_fc.py` now prints N in the legend and hides the curve below
 
 1. **Recommended shape: `y11` (Y11 iterC7, SiPM 2016).** It is digitizer-validated
    (Σ|res| 11.31 pp vs 13.58 pp for the default, `ana/` HE). It is also the best
-   match to data and to the data-phased 207 in the ZS-aware analysis, for both HB
-   and HE.
+   match in the ZS-aware analysis, for both HB and HE: to data, to the data-phased
+   207, and to 207 as stored with no shift (section 4.4).
 2. **Drop the SiPM-kernel tunings (iterA2, iterB4).** They pass the fit-level checks
    but fail at the digitizer level. They also change the simulated noise (ZS
    fraction, pedestal consistency).
@@ -342,9 +448,12 @@ the DB. `plot_from_fc.py` now prints N in the legend and hides the curve below
    to the ZS-aware `anaInfo` profiles, which is what reco sees. iterC8 and iterC9
    showed that large steps in n overshoot; small re-baselined steps from iterC7 are
    safer.
-5. **Fix the 207 phase convention once.** The fit loop, the data fit and the fixed
-   plotting convention differ by about 6 ns. A fixed, independently measured phase
-   (Mahi template placement or TDC timing) would make "vs 207" numbers unambiguous.
+5. **Use the unshifted LUT placement for "vs 207" plots.** It matches the fit-loop
+   target and the arrays as stored, and the data agrees with it (0 ns HE, +1 ns HB).
+   The peak-centred placement shifts 207 by −6 ns and 208 by −3 ns and should be read
+   with that in mind. An independently measured phase (Mahi template placement or TDC
+   timing) is still needed to check the remaining ~3 ns offset between default MC and
+   the stored 208.
 
 ## 6. Caveats
 
@@ -361,7 +470,7 @@ the DB. `plot_from_fc.py` now prints N in the legend and hides the curve below
    simulation uses shape 206) is a hypothesis. It is not yet confirmed in the
    simulation code.
 6. **8 integrated time slices** constrain only part of the shape. Fitted phase and
-   shape are partly degenerate (see `default/` report, section 3.4).
+   shape are partly degenerate (see `default/` report, section 3.5).
 
 ## 7. Reproducing
 
@@ -385,3 +494,7 @@ cd /afs/cern.ch/work/p/ptiwari/public/hcal/shapefit/CMSSW_17_0_0_pre2/src/HCALPu
 
 ROOT outputs: `edmHcalPulseShape_gensim_chinfo_{y11,sipm,both}.root`,
 `edmHcalPulseShape_digiraw.root`, `edmHcalPulseShape_data.root`.
+
+Plots per variant: `{HB,HE}_SiPM_8ts_chinfo_{y11,sipm,both}.png` (peak-centred LUTs),
+`…_unshifted.png` (`--lut-align soi-start`, LUTs as stored) and `…_fit.png`
+(`--fit-phase --subtract-baseline`).

@@ -63,6 +63,13 @@ parser.add_argument("--fit-phase", action="store_true",
 parser.add_argument("--subtract-baseline", action="store_true",
                     help="subtract the mean pre-SOI fraction (TS0..SOI-1, pileup/residual pedestal) "
                          "from each digi curve and renormalize before comparing with the LUTs")
+parser.add_argument("--lut-align", choices=("peak-centre", "soi-start"), default="peak-centre",
+                    help="where the 1 ns LUT (207/208) is placed before integrating into 25 ns slices: "
+                         "'peak-centre' (old default) puts the LUT peak at the SOI-bin centre, an "
+                         "implicit shift of -6 ns for 207 and -3 ns for 208; 'soi-start' puts LUT bin 0 "
+                         "at the start of the SOI (75 ns in the 8-TS window), i.e. the CMSSW array as "
+                         "stored, with no shift (same convention as pulse_shape_fitting/"
+                         "hcal_pulse_shapes.py::_shift_to_soi, the fit target)")
 args = parser.parse_args()
 
 QCUT_SUFFIX = r" ($\Sigma Q$ > 5000 fC)"
@@ -130,10 +137,15 @@ def _safe_ratio(num, den):
 
 
 def bin_shape_lut(s, nts, soi_ts, shift_ns=0):
-    """Integrate a 1 ns/bin shape LUT into nts 25 ns slices, peak aligned to SOI bin centre,
-    then moved by shift_ns (> 0 = later)."""
-    s_peak_ns = int(np.argmax(s))
-    offset_ns = s_peak_ns - (soi_ts * 25 + 12) - shift_ns
+    """Integrate a 1 ns/bin shape LUT into nts 25 ns slices, then move it by shift_ns (> 0 = later).
+    Placement before the shift (--lut-align):
+      peak-centre: LUT peak at the SOI-bin centre (implicit -6 ns for 207, -3 ns for 208)
+      soi-start:   LUT bin 0 at the start of the SOI, i.e. the array as stored, no shift"""
+    if args.lut_align == "soi-start":
+        offset_ns = -(soi_ts * 25) - shift_ns
+    else:
+        s_peak_ns = int(np.argmax(s))
+        offset_ns = s_peak_ns - (soi_ts * 25 + 12) - shift_ns
     data = np.zeros(nts)
     for ts in range(nts):
         i_lo = max(0,   ts * 25       + offset_ns)
@@ -280,8 +292,10 @@ def make_plot(mc_digiraw, mc_gensim, data_digi, s207, s208, nts, soi_ts, outfile
                        edgecolor="black", linewidth=1))
     # Comparison method, in its own box in the empty pre-SOI region (only when
     # a non-default method is used, so the fit-loop plots stay unchanged)
-    if args.fit_phase or baselines:
-        method_text = "LUT phase:\n" + ("  fitted" if args.fit_phase else "  peak at SOI-bin\n  centre (fixed)")
+    if args.fit_phase or baselines or args.lut_align == "soi-start":
+        align_text = ("  LUT bin 0 at SOI\n  start (no shift)" if args.lut_align == "soi-start"
+                      else "  peak at SOI-bin\n  centre")
+        method_text = "LUT phase:\n" + align_text + ("\n  + fitted shift" if args.fit_phase else "")
         if baselines:
             method_text += "\nPre-SOI baseline\nsubtracted (per TS):\n" + "\n".join(
                 f"  {k} {v:+.3f}" for k, v in baselines.items())

@@ -10,17 +10,18 @@
 #
 # Output: edmHcalPulseShape_data.root
 #
-# Example input (2026 JetMET0, Run2026A):
-#   /store/data/Run2026A/JetMET0/RAW/v1/000/401/614/00000/0ab92356-5c66-483e-9ea4-7a1aeeb09ac6.root
+# Input: JetMET0, run 401868 (/JetMET0/Run2026B-v1/RAW): 495 files, 14.1M events,
+# ~28.8k events / ~6 GB per file.
 #
-# NOTE: a single RAW file can be as few as O(1-10) events (the example file
-# above has only 2!) which is nowhere near enough statistics to survive the
-# 5000 fC per-channel qCut. Use MANY files. Build a file list with:
-#   dasgoclient --query="file dataset=/JetMET0/Run2026A-v1/RAW" \
-#     | sed 's|^|root://cms-xrd-global.cern.ch/|' > jetmet0_files.txt
-# and drop jetmet0_files.txt next to this cfg (one xrootd path per line) —
-# it is picked up automatically below if present; otherwise falls back to
-# the single hardcoded example file.
+# File list: jetmet0_files.txt next to this cfg (one xrootd path per line) is
+# picked up automatically below; it currently holds 5 files (144k events).
+# The full sorted list of the run is in jetmet0_files_run401868.full.txt; it was
+# built with:
+#   dasgoclient --query="file dataset=/JetMET0/Run2026B-v1/RAW run=401868" \
+#     | sort | sed 's|^|root://cms-xrd-global.cern.ch/|' > jetmet0_files_run401868.full.txt
+#   head -5 jetmet0_files_run401868.full.txt > jetmet0_files.txt
+# (the previous run-401642 list is kept as jetmet0_files.txt.run401642.bak).
+# Without jetmet0_files.txt the cfg falls back to a single file of run 401868.
 import os
 import FWCore.ParameterSet.Config as cms
 from Configuration.Eras.Era_Run3_2026_cff import Run3_2026
@@ -59,20 +60,17 @@ process.options = cms.untracked.PSet(
     wantSummary    = cms.untracked.bool(True),
 )
 
-# DAS dataset:
-#   /JetMET0/Run2026A-v1/RAW
-# Get file list (see NOTE above — use many files, not one):
-#   dasgoclient --query="file dataset=/JetMET0/Run2026A-v1/RAW" | sed 's|^|root://cms-xrd-global.cern.ch/|' > jetmet0_files.txt
+# DAS dataset: /JetMET0/Run2026B-v1/RAW, run 401868 (see file-list notes at the top)
 _filelist_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "jetmet0_files.txt")
 if os.path.exists(_filelist_path):
     with open(_filelist_path) as _f:
         _files = [line.strip() for line in _f if line.strip() and not line.strip().startswith("#")]
     print(f"[hcalpulse_data_raw_cfg] using {len(_files)} files from {_filelist_path}")
 else:
-    print(f"[hcalpulse_data_raw_cfg] {_filelist_path} not found, falling back to single 2-event example file "
-          f"(NOT enough statistics for qCut=5000 fC — see NOTE above)")
+    print(f"[hcalpulse_data_raw_cfg] {_filelist_path} not found, falling back to a single "
+          f"run-401868 file (~29k events)")
     _files = [
-        "root://cms-xrd-global.cern.ch//store/data/Run2026A/JetMET0/RAW/v1/000/401/614/00000/0ab92356-5c66-483e-9ea4-7a1aeeb09ac6.root",
+        "root://cms-xrd-global.cern.ch//store/data/Run2026B/JetMET0/RAW/v1/000/401/868/00000/0015ad63-a30f-4bf3-8139-16857542c54e.root",
     ]
 
 process.source = cms.Source("PoolSource",
