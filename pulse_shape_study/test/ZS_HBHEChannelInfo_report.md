@@ -23,14 +23,20 @@ and (2) run on `HBHEChannelInfo` instead of the digi collection
   - The pulse only appears once the **effective pedestal** (QIE pedestal + SiPM
     dark current) is subtracted. `HBHEChannelInfo` provides it; the old digi-based
     analysis subtracted only the QIE pedestal.
-- **Data digi agrees with shape 207 once the LUT timing phase is fitted.**
-  - With the fixed convention (LUT peak at the centre of the SOI bin), data looks
-    much later or broader than 207.
-  - Fitting the phase (+7 ns for HB, +6 ns for HE) and removing the flat pre-SOI
-    baseline brings data onto 207 to < 1 % rms per time slice. This is the same
-    level at which MC digi matches 208 (0 ns shift).
+- **The earlier plots shifted shape 207 by −6 ns.**
+  - They placed each LUT's peak at the centre of the SOI bin. For 207 (peak at bin
+    18) that starts the array 6 ns before the SOI, instead of at the SOI start as
+    stored in CMSSW. Shape 208 (peak at bin 15) was shifted by −3 ns.
+  - With 207 placed as stored (section 3.4), it gives 0.51 / 0.36 in time slices
+    3 / 4, against 0.66 / 0.24 in the earlier plots.
+- **Data digi agrees with the unshifted shape 207.**
+  - HE data matches it with no shift (rms 0.013 per time slice); HB data is within
+    1 ns of it once the flat pre-SOI baseline is removed.
+  - The fitted "+6 / +7 ns" (section 3.5) is mostly the plotting convention's own
+    −6 ns being undone.
+  - MC digi peaks about 3 ns earlier than the unshifted shape 208.
   - With only 8 integrated time slices, this shows consistency, not a unique
-    shape determination (section 3.4).
+    shape determination (section 3.5).
 
 ## 1. Before: old digi-based analysis
 
@@ -145,10 +151,13 @@ the summed fraction in time slices 0–2.
 HE is only mildly affected: the peak goes from 0.54 to 0.58. In data, ZS changes
 nothing and the effective pedestal sharpens the peak.
 
-### 3.3 After: comparison with the target shapes, fixed LUT phase
+### 3.3 After: comparison with the target shapes, peak-centred LUTs
 
 Here each LUT is integrated into 25 ns slices with its peak placed at the centre of the
-SOI bin, the convention used by all earlier versions of these plots.
+SOI bin, the convention used by all earlier versions of these plots. This is an
+implicit time shift: **−6 ns for shape 207** (peak at bin 18) and **−3 ns for shape
+208** (peak at bin 15), relative to the arrays as stored in CMSSW. Section 3.4 shows
+the same comparison without this shift.
 
 <p align="center">
   <img src="HB_SiPM_8ts_chinfo.png" width="45%" alt="HB, HBHEChannelInfo with ZS flags">
@@ -164,18 +173,19 @@ On these plots:
 - **Grey dashed:** dropped MC channels passing the charge cut, for illustration only.
   They are not part of the result.
 
-| Charge fraction | Shape 207 (data LUT) | MC reco 208 | MC digi | Data digi |
+| Charge fraction | Shape 207 (data LUT, −6 ns) | MC reco 208 (−3 ns) | MC digi | Data digi |
 |---|---|---|---|---|
 | HB, SOI (time slice 3) | 0.66 | 0.59 | 0.57 | 0.40 |
 | HB, time slice 4 | 0.24 | 0.30 | 0.28 | 0.34 |
 | HE, SOI (time slice 3) | 0.66 | 0.59 | 0.58 | 0.54 |
 | HE, time slice 4 | 0.24 | 0.30 | 0.30 | 0.36 |
 
-- **MC digi agrees with shape 208 to within a few %** in both HB and HE.
+- **MC digi agrees with shape 208 to within a few %** in both HB and HE, but only
+  because 208 is shifted −3 ns here (section 3.4).
 - **Both MC and data put less charge in the SOI and more in time slice 4 than shape
-  207.** This is the known shape mismatch under study.
-- **Data is noticeably later or broader than shape 207 at this fixed phase.** Section
-  3.4 shows this is almost entirely a timing phase plus a flat baseline, not a shape
+  207.** Most of this is the −6 ns shift applied to 207 (section 3.4).
+- **Data is noticeably later or broader than shape 207 in this placement.** Sections
+  3.4 and 3.5 show this is a timing placement plus a flat baseline, not a shape
   difference.
 - **The grey dropped HB curve starts at time slice 4 by construction.**
   - The Run-3 ZS keeps a channel only if the ADC count in the SOI passes the
@@ -187,11 +197,71 @@ On these plots:
   probably tagged bad in the database rather than ZS noise; `isDropped()` does not
   separate the two.
 
-### 3.4 Comparison with fitted LUT phase and baseline subtraction
+### 3.4 Comparison with unshifted LUTs (array as stored)
 
-The fixed convention in 3.3 is an assumption, not a measurement. If the data pulses
-arrive at a different phase, charge moves between time slices 3 and 4, and the
-fractions disagree even when the shape is the same. The plots below:
+**What changes.** Shapes 207 and 208 are lists of 250 numbers, one per nanosecond. To
+compare them with the digis, each list is placed on the time axis and summed in 25 ns
+time slices. Where the list starts decides how its charge splits between time slices
+3 and 4:
+
+- **Peak-centred (section 3.3):** the list is moved so that its peak sits in the middle
+  of time slice 3. This moves 207 6 ns earlier and 208 3 ns earlier than stored.
+- **Unshifted (this section):** the list starts at the beginning of time slice 3
+  (75 ns), exactly as stored in CMSSW
+  ([`HcalPulseShapes.cc`](https://github.com/cms-sw/cmssw/blob/master/CalibCalorimetry/HcalAlgos/src/HcalPulseShapes.cc#L327)).
+  The 207 peak then falls at 93–94 ns.
+
+Only the red (207) and green (208) curves move between the two placements; the
+measured MC and data curves are identical.
+
+**HB:** peak-centred (left) and unshifted (right)
+<p align="center">
+  <img src="HB_SiPM_8ts_chinfo.png" width="45%" alt="HB, peak-centred LUTs">
+  <img src="HB_SiPM_8ts_chinfo_unshifted.png" width="45%" alt="HB, unshifted LUTs">
+</p>
+
+**HE:** peak-centred (left) and unshifted (right)
+<p align="center">
+  <img src="HE_SiPM_8ts_chinfo.png" width="45%" alt="HE, peak-centred LUTs">
+  <img src="HE_SiPM_8ts_chinfo_unshifted.png" width="45%" alt="HE, unshifted LUTs">
+</p>
+
+**How the LUTs change** (charge fraction in time slices 3 / 4 / 5):
+
+| | Peak-centred | Unshifted |
+|---|---|---|
+| Shape 207 | 0.66 / 0.24 / 0.06 | **0.51 / 0.36 / 0.08** |
+| Shape 208 | 0.59 / 0.30 / 0.07 | **0.51 / 0.36 / 0.08** |
+
+**How well each curve matches** (rms difference per time slice over time slices 3–7,
+no baseline subtraction; lower is better):
+
+| | Data vs 207 | MC vs 208 |
+|---|---|---|
+| HB, peak-centred | 0.127 | **0.013** |
+| HB, unshifted | **0.050** | 0.040 |
+| HE, peak-centred | 0.078 | **0.006** |
+| HE, unshifted | **0.013** | 0.039 |
+
+**What this shows:**
+
+- **Data matches 207 much better when 207 is not shifted.** In HE the agreement is
+  within a few % in every time slice. The disagreement in section 3.3 came from the
+  placement, not from the shape.
+- **HB data still has a lower SOI fraction** (0.40 against 0.51). Part of this is its
+  flat +0.024 per time slice before the SOI (pileup or residual pedestal), which is not
+  subtracted here. With it removed, HB data matches 207 within 1 ns of this placement
+  (section 3.5).
+- **MC now sits about 3 ns earlier than the stored 208.** The close MC–208 agreement in
+  section 3.3 relied on the −3 ns shift of 208.
+- **Unshifted, 207 and 208 are almost the same** over 8 time slices.
+
+### 3.5 Comparison with fitted LUT phase and baseline subtraction
+
+The placement in 3.3 is an assumption, not a measurement. If the data pulses arrive
+at a different phase, charge moves between time slices 3 and 4, and the fractions
+disagree even when the shape is the same. Starting from the peak-centred placement,
+the plots below:
 
 - **fit the time shift of each LUT** (1 ns steps, ±40 ns, rms over time slices ≥ SOI):
   shape 207 to data digi, shape 208 to MC digi;
@@ -211,7 +281,17 @@ fractions disagree even when the shape is the same. The plots below:
 | HB: shape 208 vs MC digi | 0 ns | 0.007 | MC +0.004 |
 | HE: shape 208 vs MC digi | 0 ns | 0.005 | MC +0.001 |
 
-For comparison, the rms of data vs 207 at the fixed phase is 0.127 (HB) and 0.078 (HE).
+For comparison, the rms of data vs 207 at the peak-centred placement is 0.127 (HB) and
+0.078 (HE).
+
+The shifts are measured from the peak-centred placement. Relative to the arrays as
+stored (section 3.4):
+
+| | Shift vs peak-centred | Shift vs unshifted array |
+|---|---|---|
+| HB: shape 207 vs data digi | +7 ns | **+1 ns** |
+| HE: shape 207 vs data digi | +6 ns | **0 ns** |
+| HB / HE: shape 208 vs MC digi | 0 ns | **−3 ns** |
 
 HB time slices 3–5 after the fit:
 
@@ -222,18 +302,19 @@ HB time slices 3–5 after the fit:
 
 - **Data matches shape 207 as closely as MC matches shape 208.** The data ratio in the
   first ratio panel is within about ±0.1 for both HB and HE.
-- **The fitted shift for 208 against MC is exactly 0 ns.** The fixed convention is
-  therefore correct for MC, which is why the MC curves look the same in 3.3 and 3.4.
-- **Data pulses arrive 6–7 ns later than the fixed convention assumes.** This could be
-  real HB/HE timing in 2026 data versus MC, a time-slew effect from a different charge
-  distribution, or pileup (caveats 1, 2 and 6).
+- **The fitted +6 / +7 ns for 207 is not a data timing offset.** It mostly undoes the
+  −6 ns implicit in the peak-centred placement: relative to the stored array, data
+  sits at 0 ns (HE) and +1 ns (HB).
+- **MC is about 3 ns earlier than the stored 208.** The 0 ns fit against the
+  peak-centred 208 equals −3 ns against the stored array. This MC/208 offset, not a
+  data offset, is the timing difference worth following up (caveat 6).
 - **The phase fit and the shape are not independent.** With only 8 integrated 25 ns
   bins, a shift can absorb part of a shape difference: shape 208 also fits HE data at
   +2 ns with rms 0.010. These plots show that data is consistent with 207, not that 207
   is uniquely the right shape. Validating the shape needs the phase from an
   independent source (caveat 6).
 
-### 3.5 No-contamination checks
+### 3.6 No-contamination checks
 
 `check_outputs.py` runs over MC/data × HB/HE × `anaInfo` / `anaInfoQIEPed`, which is
 24 checks. **All pass.** It checks that:
@@ -261,11 +342,12 @@ HB time slices 3–5 after the fit:
 5. **The charge cut now applies to dark-current-subtracted charge.** The kept channels
    have a median raw energy of ~4–7 GeV, consistent with the 4 GeV isotrack
    convention. The cut could be restated as an explicit energy cut.
-6. **The LUT timing phase needs an independent reference.** The +6–7 ns data offset in
-   section 3.4 comes from the fit itself, so it is partly degenerate with the shape.
-   It should be checked against the phase convention reco uses when placing the
-   template in time (Mahi), or against the TDC timing that `HBHEChannelInfo` provides
-   in data. Both would allow 207 and 208 to be compared at a fixed, measured phase.
+6. **The LUT timing phase needs an independent reference.** Placing the LUTs as stored
+   (section 3.4) removes the plotting convention's own shift, but the fitted offsets
+   in section 3.5 are still partly degenerate with the shape. The remaining ~3 ns MC
+   offset against the stored 208 should be checked against the phase convention reco
+   uses when placing the template in time (Mahi), or against the TDC timing that
+   `HBHEChannelInfo` provides in data.
 
 ## 5. Reproducing
 
@@ -278,7 +360,7 @@ cd /afs/cern.ch/work/p/ptiwari/public/hcal/default/CMSSW_17_0_0_pre2/src/HCALPul
 |---|---|
 | `plugins/HBHEChannelInfoPulseAnalyzer.cc` | new analyzer reading `HBHEChannelInfo` |
 | `test/hcalpulse_gensimdigiraw_cfg.py`, `hcalpulse_gensim_cfg.py`, `hcalpulse_data_raw_cfg.py` | ZS flags + `saveInfos = True` reconstructor clones |
-| `test/plot_from_fc.py` | fixed phase: `--dir anaInfo --tag _chinfo --show-dropped`; fitted: `--dir anaInfo --tag _chinfo_fit --fit-phase --subtract-baseline` |
+| `test/plot_from_fc.py` | peak-centred: `--dir anaInfo --tag _chinfo --show-dropped`; unshifted: `--dir anaInfo --tag _chinfo_unshifted --lut-align soi-start`; fitted: `--dir anaInfo --tag _chinfo_fit --fit-phase --subtract-baseline` |
 | `test/plot_zs_pedestal_check.py` | three-step ZS vs pedestal plot |
 | `test/check_outputs.py` | no-contamination checks |
 | `test/run_all.sh` | full workflow; logs in `test/logs/` |
