@@ -86,6 +86,10 @@ step "plots: anaInfo/, LUTs unshifted (bin 0 at SOI start) -> HB/HE_SiPM_8ts_chi
 run_logged plot_anaInfo_unshifted python3 plot_from_fc.py --dir anaInfo --tag _chinfo_unshifted \
   --lut-align soi-start $MC_ARGS
 
+step "plots: anaInfo/, LUTs placed as in RECO (bin 0 at SOI start - 7 ns) -> HB/HE_SiPM_8ts_chinfo_reco.png"
+run_logged plot_anaInfo_reco python3 plot_from_fc.py --dir anaInfo --tag _chinfo_reco \
+  --lut-align reco $MC_ARGS
+
 step "plots: anaInfo/, LUT phase fitted + pre-SOI baseline subtracted -> HB/HE_SiPM_8ts_chinfo_fit.png"
 run_logged plot_anaInfo_fit python3 plot_from_fc.py --dir anaInfo --tag _chinfo_fit \
   --fit-phase --subtract-baseline $MC_ARGS

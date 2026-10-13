@@ -56,12 +56,15 @@ parser.add_argument("--fit-phase", action="store_true",
 parser.add_argument("--subtract-baseline", action="store_true",
                     help="subtract the mean pre-SOI fraction (TS0..SOI-1, pileup/residual pedestal) "
                          "from each digi curve and renormalize before comparing with the LUTs")
-parser.add_argument("--lut-align", choices=("peak-centre", "soi-start"), default="peak-centre",
+parser.add_argument("--lut-align", choices=("peak-centre", "soi-start", "reco"), default="peak-centre",
                     help="where the 1 ns LUT (207/208) is placed before integrating into 25 ns slices: "
                          "'peak-centre' (old default) puts the LUT peak at the SOI-bin centre, an "
                          "implicit shift of -6 ns for 207 and -3 ns for 208; 'soi-start' puts LUT bin 0 "
                          "at the start of the SOI (75 ns in the 8-TS window), i.e. the CMSSW array as "
-                         "stored, with no shift")
+                         "stored, with no shift; 'reco' puts LUT bin 0 7 ns before the SOI start, the "
+                         "placement Mahi uses (PulseShapeFunctor::funcShape, iniTimeShift = 92.5 ns, "
+                         "meanTime = 0; the HcalTimeSlew 'Medium' delay is 0 for pulses above ~2.2 nC, "
+                         "i.e. for every channel passing the 5000 fC cut)")
 args = parser.parse_args()
 
 def open_root(path):
@@ -122,6 +125,13 @@ def _safe_ratio(num, den):
     return ratio - 1.0
 
 
+# Mahi template placement: PulseShapeFunctor::funcShape starts the LUT at
+# i_start = int(iniTimeShift) + 1 = 93 ns in its 10-TS frame, where the SOI (TS4)
+# starts at 100 ns, i.e. LUT bin 0 sits 7 ns before the SOI start (pulseTime = 0).
+RECO_INI_TIME_SHIFT_NS = 92.5   # hcal::constants::iniTimeShift (RecoLocalCalo/HcalRecAlgos/interface/HcalConstants.h)
+RECO_BIN0_BEFORE_SOI_NS = 4 * 25 - (int(RECO_INI_TIME_SHIFT_NS) + 1)   # = 7
+
+
 def bin_shape_lut(s, nts, soi_ts, shift_ns=0):
     """Integrate a 1 ns/bin shape LUT into nts 25 ns slices, then move it by shift_ns (> 0 = later).
     Placement before the shift (--lut-align):
@@ -129,6 +139,8 @@ def bin_shape_lut(s, nts, soi_ts, shift_ns=0):
       soi-start:   LUT bin 0 at the start of the SOI, i.e. the array as stored, no shift"""
     if args.lut_align == "soi-start":
         offset_ns = -(soi_ts * 25) - shift_ns
+    elif args.lut_align == "reco":
+        offset_ns = -(soi_ts * 25 - RECO_BIN0_BEFORE_SOI_NS) - shift_ns
     else:
         s_peak_ns = int(np.argmax(s))
         offset_ns = s_peak_ns - (soi_ts * 25 + 12) - shift_ns
@@ -266,8 +278,9 @@ def make_plot(mc_digiraw, mc_gensim, data_digi, s207, s208, nts, soi_ts, outfile
              bbox=dict(boxstyle="square,pad=0.3", facecolor="white",
                        edgecolor="black", linewidth=1))
     # Comparison method, in its own box below the legend (empty pre-SOI region)
-    align_text = ("  LUT bin 0 at SOI\n  start (no shift)" if args.lut_align == "soi-start"
-                  else "  peak at SOI-bin\n  centre")
+    align_text = {"soi-start": "  LUT bin 0 at SOI\n  start (no shift)",
+                  "reco": "  as in RECO (Mahi):\n  LUT bin 0 at\n  SOI start - 7 ns"}.get(
+                      args.lut_align, "  peak at SOI-bin\n  centre")
     method_text = "LUT phase:\n" + align_text + ("\n  + fitted shift" if args.fit_phase else "")
     if baselines:
         method_text += "\nPre-SOI baseline\nsubtracted (per TS):\n" + "\n".join(
