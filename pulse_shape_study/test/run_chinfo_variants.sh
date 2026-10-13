@@ -16,8 +16,9 @@
 #   ./run_chinfo_variants.sh --plots-only     # no build, no cmsRun: re-plot existing ROOT files
 #   ./run_chinfo_variants.sh --variants "y11 both"   # subset of variants
 #
-# Outputs: {HB,HE}_SiPM_8ts_chinfo_{y11,sipm,both}{,_unshifted,_fit}.png
+# Outputs: {HB,HE}_SiPM_8ts_chinfo_{y11,sipm,both}{,_unshifted,_reco,_fit}.png
 #   (no suffix: LUT peak at SOI-bin centre; _unshifted: --lut-align soi-start, LUT as stored;
+#    _reco: --lut-align reco, LUT placed as Mahi does (bin 0 at SOI start - 7 ns);
 #    _fit: --fit-phase --subtract-baseline)
 # Data: JetMET0 run 401868 (/JetMET0/Run2026B-v1/RAW), file list in jetmet0_files.txt.
 # Logs go to test/logs/<step>_<timestamp>.log. The script stops at the first failure.
@@ -36,7 +37,7 @@ while [ $# -gt 0 ]; do
     --skip-common) DO_COMMON=0 ;;
     --plots-only)  DO_BUILD=0; DO_CMSRUN=0 ;;
     --variants)    shift; VARIANTS="$1" ;;
-    -h|--help)     sed -n 2,23p "$0"; exit 0 ;;
+    -h|--help)     sed -n 2,24p "$0"; exit 0 ;;
     *) echo "unknown option: $1"; exit 1 ;;
   esac
   shift
@@ -111,6 +112,10 @@ for v in $VARIANTS; do
   run_logged "plot_chinfo_${v}_unshifted" python3 plot_from_fc.py $COMMON_ARGS --tag "_chinfo_${v}_unshifted" \
     --lut-align soi-start "${VARIANT_ARGS[@]}"
 
+  step "plots: variant $v, LUTs placed as in RECO (bin 0 at SOI start - 7 ns) -> HB/HE_SiPM_8ts_chinfo_${v}_reco.png"
+  run_logged "plot_chinfo_${v}_reco" python3 plot_from_fc.py $COMMON_ARGS --tag "_chinfo_${v}_reco" \
+    --lut-align reco "${VARIANT_ARGS[@]}"
+
   step "plots: variant $v, LUT phase fitted + pre-SOI baseline subtracted -> HB/HE_SiPM_8ts_chinfo_${v}_fit.png"
   run_logged "plot_chinfo_${v}_fit" python3 plot_from_fc.py $COMMON_ARGS --tag "_chinfo_${v}_fit" \
     --fit-phase --subtract-baseline "${VARIANT_ARGS[@]}"
@@ -119,5 +124,5 @@ done
 step "done. Outputs in $TESTDIR:"
 for v in $VARIANTS; do
   ls -1 {HB,HE}_SiPM_8ts_chinfo_${v}.png {HB,HE}_SiPM_8ts_chinfo_${v}_unshifted.png \
-        {HB,HE}_SiPM_8ts_chinfo_${v}_fit.png
+        {HB,HE}_SiPM_8ts_chinfo_${v}_reco.png {HB,HE}_SiPM_8ts_chinfo_${v}_fit.png
 done

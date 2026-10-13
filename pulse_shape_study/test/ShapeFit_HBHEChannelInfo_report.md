@@ -32,15 +32,21 @@ convolved with the SiPM response. Three tuned versions were digitized:
   fractions also become negative (HB −0.043), which means the effective pedestal
   is over-subtracted. The most likely cause is that the SiPM dark-current
   simulation also uses shape 206 (section 4.2).
-- **With shape 207 placed as stored in CMSSW, iterC7 is clearly the best match to 207.**
-  - The first set of plots placed each LUT's peak at the SOI-bin centre. That is an
-    implicit shift of −6 ns for 207 and −3 ns for 208 (section 2.3).
-  - With the LUTs unshifted (section 4.4), which is also the placement the fit loop
-    used as its target, the rms per time slice to 207 is **0.027 (HB) / 0.023 (HE)**
-    for `y11`. That compares with 0.044 / 0.043 for the default shape and
-    0.15–0.17 for `sipm` and `both`.
-  - In the peak-centred plots iterC7 looked worse than the default shape. That was
-    the −6 ns placement, not the shape.
+- **How 207 compares with the tuned MC depends on where 207 is placed in time.**
+  Three placements are compared (section 2.3):
+
+  | Placement | Array bin 0 at | Best variant vs 207 |
+  |---|---|---|
+  | Peak-centred (first plots) | 207: SOI start − 6 ns; 208: − 3 ns | `both` (HE) |
+  | Unshifted, also the fit-loop target | SOI start | **`y11`** (rms 0.027 HB / 0.023 HE, default 0.044 / 0.043) |
+  | **As in RECO (Mahi)** | **SOI start − 7 ns** | `both` (HE); `y11` worst |
+
+  - **In the RECO placement every MC pulse, and the data, arrive later than the
+    template** (section 4.5). The comparison there tests timing as well as shape.
+  - **On shape, `y11` stays the best variant:** against data, and against 207 once
+    the timing is taken out (sections 4.4, 4.6). Its pulse is too late for RECO's
+    template, but timing is set by the 7.2 ns `shift` and the simulation `timePhase`,
+    not by the shape parameters tuned here.
 - **The "isDropped" peak at TS5 in `HB_SiPM_8ts_chinfo_{sipm,both}.png` was a single
   channel.** Only 1 dropped HB channel passes the charge cut in those variants. The
   curve is now hidden below 20 channels, and its legend shows the channel count.
@@ -136,13 +142,18 @@ Conclusion: the 2-component LogNormal has a structural ceiling for this target.
   SOI start. This is the fit-loop placement. Integrating the 1 ns bins directly gives
   207 = 50.8 / 36.2 / 8.2 / 3.2 / 1.7 % (section 4.4); the 1-point difference from the
   fit loop's 51.8 / 35.4 % comes from its interpolation onto a 0.5 ns grid.
+- **`plot_from_fc.py --lut-align reco`** places the LUTs as Mahi does in
+  reconstruction: bin 0 at the SOI start − 7 ns, from `iniTimeShift = 92.5 ns` in
+  `PulseShapeFunctor` (section 4.5). This is 1 ns earlier than the peak-centred 207
+  and 7 ns earlier than the fit-loop target.
 - **Fitting the 207 phase to the data digi** gives +6 ns (HE) and +7 ns (HB) relative
-  to the peak-centred placement (section 4.5), i.e. 0 ns and +1 ns relative to the
-  stored array.
+  to the peak-centred placement (section 4.6), i.e. 0 ns and +1 ns relative to the
+  stored array, and +7 / +8 ns relative to the RECO placement.
 
-The fit loop therefore tuned 206 towards 207 as stored, which is also where the data
-sits. In the peak-centred plots iterC7 appears to move *away* from 207; this is only
-the −6 ns placement, not a shape effect.
+The fit loop therefore tuned 206 towards 207 placed as stored, which is also where the
+data sits, but 7 ns later than where reco places 207. The shape tuning is not affected
+by this choice; the pulse *timing* is, and section 4.5 shows that in the RECO placement
+all MC pulses, and the data, arrive later than the template.
 
 ## 3. Implementation
 
@@ -352,17 +363,106 @@ slices 3–7, no baseline subtraction; lower is better):
 
 - **With 207 unshifted, `y11` is clearly the best tuned shape.** Its rms to 207 is about
   40 % lower than the default shape's in HB and almost 50 % lower in HE. This matches
-  its ranking against data in section 4.5, here without any fitted phase.
-- **The peak-centred plots gave the wrong ranking.** There `y11` looked worse than the
-  default shape and `both` looked best in HE. The −6 ns shift moves 207's charge into
-  the SOI, which favours the too-fast `sipm`/`both` pulses.
+  its ranking against data in section 4.6, here without any fitted phase.
+- **The ranking depends on the placement.** In the peak-centred plots `y11` looked worse
+  than the default shape and `both` looked best in HE: moving 207 earlier puts more of
+  its charge in the SOI, which favours the too-fast `sipm`/`both` pulses.
 - **`sipm` and `both` are 3–4 times further from 207 than the default shape.** Their
   pulses put 0.75–0.84 of the charge in the SOI, against 0.51 for 207.
 - **Data matches the unshifted 207 too:** within a few % in HE. HB data has a lower SOI
   fraction (0.40), partly because of its flat +0.024 per time slice baseline, which is
   not subtracted here.
+- **This is not where RECO places the LUTs.** Reco starts them 7 ns earlier
+  (section 4.5).
 
-### 4.5 Comparison with fitted LUT phase and baseline subtraction
+### 4.5 Comparison with LUTs placed as in RECO (Mahi)
+
+**Where reco places the template.** Mahi builds its pulse template from shape 207
+(data) or 208 (MC) with `PulseShapeFunctor::funcShape`
+([`PulseShapeFunctor.cc` L82](https://github.com/cms-sw/cmssw/blob/master/RecoLocalCalo/HcalRecAlgos/src/PulseShapeFunctor.cc#L82)):
+
+- The array starts at `i_start = int(iniTimeShift + t0) + 1` ns in a 10-time-slice
+  frame where the SOI (time slice 4) starts at 100 ns, with `iniTimeShift = 92.5 ns`.
+- `t0 = meanTime + time-slew delay(Q)`, with `meanTime = 0`. The HcalTimeSlew "Medium"
+  delay, `11.98 − 1.56 ln Q[fC]` clamped to [0, 10] ns, is 0 for every channel passing
+  the 5000 fC cut (checked for data and MC).
+- So the array starts **7 ns before the SOI**, for data and MC alike.
+- **The MC timing shift** is the `shift = 7.2` ns in `Y11206()`
+  ([`HcalPulseShapes.cc` L612–615](https://github.com/cms-sw/cmssw/blob/master/CalibCalorimetry/HcalAlgos/src/HcalPulseShapes.cc#L612-L615)).
+  It delays the simulated photon arrival and is part of shape 206, which is what this
+  tree tunes. Shape 208 already contains it, and reco places 208 like 207.
+
+`plot_from_fc.py --lut-align reco` reproduces a Python port of `funcShape` exactly:
+207 = 0.678 / 0.221 / 0.060 and 208 = 0.668 / 0.234 / 0.060 in time slices 3 / 4 / 5.
+
+In each pair below, the left plot is unshifted (section 4.4) and the right plot is
+placed as in RECO.
+
+**`y11` (Y11 iterC7 + SiPM 2016), HB**
+<p align="center">
+  <img src="HB_SiPM_8ts_chinfo_y11_unshifted.png" width="45%" alt="HB, y11, unshifted LUTs">
+  <img src="HB_SiPM_8ts_chinfo_y11_reco.png" width="45%" alt="HB, y11, LUTs as in RECO">
+</p>
+
+**`y11`, HE**
+<p align="center">
+  <img src="HE_SiPM_8ts_chinfo_y11_unshifted.png" width="45%" alt="HE, y11, unshifted LUTs">
+  <img src="HE_SiPM_8ts_chinfo_y11_reco.png" width="45%" alt="HE, y11, LUTs as in RECO">
+</p>
+
+**`sipm` (Y11 original + SiPM iterB4), HB**
+<p align="center">
+  <img src="HB_SiPM_8ts_chinfo_sipm_unshifted.png" width="45%" alt="HB, sipm, unshifted LUTs">
+  <img src="HB_SiPM_8ts_chinfo_sipm_reco.png" width="45%" alt="HB, sipm, LUTs as in RECO">
+</p>
+
+**`sipm`, HE**
+<p align="center">
+  <img src="HE_SiPM_8ts_chinfo_sipm_unshifted.png" width="45%" alt="HE, sipm, unshifted LUTs">
+  <img src="HE_SiPM_8ts_chinfo_sipm_reco.png" width="45%" alt="HE, sipm, LUTs as in RECO">
+</p>
+
+**`both` (Y11 iterC7 + SiPM iterB4), HB**
+<p align="center">
+  <img src="HB_SiPM_8ts_chinfo_both_unshifted.png" width="45%" alt="HB, both, unshifted LUTs">
+  <img src="HB_SiPM_8ts_chinfo_both_reco.png" width="45%" alt="HB, both, LUTs as in RECO">
+</p>
+
+**`both`, HE**
+<p align="center">
+  <img src="HE_SiPM_8ts_chinfo_both_unshifted.png" width="45%" alt="HE, both, unshifted LUTs">
+  <img src="HE_SiPM_8ts_chinfo_both_reco.png" width="45%" alt="HE, both, LUTs as in RECO">
+</p>
+
+**How close each curve is to the RECO-placed templates** (rms per time slice over
+time slices 3–7, no baseline subtraction; lower is better):
+
+| | SOI / TS4 fraction, HB | HB vs 207 | HB vs 208 | SOI / TS4 fraction, HE | HE vs 207 | HE vs 208 |
+|---|---|---|---|---|---|---|
+| RECO-placed 207 / 208 | 0.68 / 0.22 and 0.67 / 0.23 | – | – | same | – | – |
+| MC, default shape | 0.57 / 0.28 | 0.059 | 0.052 | 0.58 / 0.30 | 0.056 | 0.050 |
+| MC, `y11` | 0.53 / 0.31 | 0.079 | 0.072 | 0.54 / 0.32 | 0.078 | 0.071 |
+| MC, `sipm` | 0.84 / 0.17 | 0.078 | 0.084 | 0.78 / 0.17 | 0.054 | 0.061 |
+| MC, `both` | 0.80 / 0.20 | 0.058 | 0.064 | 0.75 / 0.20 | **0.034** | 0.040 |
+| Data | 0.40 / 0.34 | 0.137 | 0.131 | 0.54 / 0.36 | 0.088 | 0.081 |
+
+**What this shows:**
+
+- **Every measured pulse arrives later than RECO's templates.** The templates put
+  0.67–0.68 of the charge in the SOI. MC with the default shape is about 4 ns later
+  than RECO's 208, and data about 6–9 ns later than RECO's 207 (`default/` report,
+  section 3.5).
+- **In this placement the ranking flips again.** `y11` comes out worst and `both` best
+  in HE. The comparison now tests timing as well as shape: a faster pulse (`both`)
+  happens to sit closer to the early template, and the later `y11` pulse moves further
+  away from it, even though `y11` is the shape closest to data.
+- **Shape and timing need to be judged separately.** Against data (section 4.6), and
+  against 207 once timing is taken out, `y11` remains best. Whether the tuned MC
+  should also move the pulse earlier, to sit where reco's template expects it, is a
+  timing question: the 7.2 ns `shift` in `Y11206()` and the simulation `timePhase`
+  control it, not the shape parameters tuned here.
+
+### 4.6 Comparison with fitted LUT phase and baseline subtraction
 
 As in `default/`, these plots start from the peak-centred placement and:
 
@@ -392,7 +492,9 @@ DIGI-RAW MC are the same.
 
 The shifts are relative to the peak-centred placement. Relative to the arrays as
 stored (section 4.4), 207 vs data is **+1 ns (HB) and 0 ns (HE)**, and 208 vs default
-MC is **−3 ns**.
+MC is **−3 ns**. Relative to the RECO placement (section 4.5), they are **+8 / +7 ns**
+for data and **+4 ns** for default MC: the digi pulses arrive that much later than
+reco's templates.
 
 rms per time slice (time slices ≥ SOI, baseline subtracted), lower is better:
 
@@ -422,7 +524,7 @@ TS4/TS3 ratio after baseline subtraction:
 - **iterB4's shape is fixed relative to 208.** Its best 208 shift is −7 ns with rms
   0.03 in HB, so it is a much faster pulse, not a re-phased default pulse.
 
-### 4.6 The isDropped curve at time slice 5 (HB `sipm` / `both`)
+### 4.7 The isDropped curve at time slice 5 (HB `sipm` / `both`)
 
 `frac_vs_ts_dropped_HB` in `sipm` and `both` contains **one** channel above 5000 fC.
 That single pulse has 99–103 % of its charge in TS5, so it is a late or out-of-time
@@ -437,7 +539,9 @@ the DB. `plot_from_fc.py` now prints N in the legend and hides the curve below
 1. **Recommended shape: `y11` (Y11 iterC7, SiPM 2016).** It is digitizer-validated
    (Σ|res| 11.31 pp vs 13.58 pp for the default, `ana/` HE). It is also the best
    match in the ZS-aware analysis, for both HB and HE: to data, to the data-phased
-   207, and to 207 as stored with no shift (section 4.4).
+   207, and to 207 as stored with no shift (section 4.4). In the RECO placement
+   (section 4.5) its pulse sits later than reco's template; that is a timing question
+   (point 5), not a reason to prefer the faster `sipm`/`both` shapes.
 2. **Drop the SiPM-kernel tunings (iterA2, iterB4).** They pass the fit-level checks
    but fail at the digitizer level. They also change the simulated noise (ZS
    fraction, pedestal consistency).
@@ -448,12 +552,15 @@ the DB. `plot_from_fc.py` now prints N in the legend and hides the curve below
    to the ZS-aware `anaInfo` profiles, which is what reco sees. iterC8 and iterC9
    showed that large steps in n overshoot; small re-baselined steps from iterC7 are
    safer.
-5. **Use the unshifted LUT placement for "vs 207" plots.** It matches the fit-loop
-   target and the arrays as stored, and the data agrees with it (0 ns HE, +1 ns HB).
-   The peak-centred placement shifts 207 by −6 ns and 208 by −3 ns and should be read
-   with that in mind. An independently measured phase (Mahi template placement or TDC
-   timing) is still needed to check the remaining ~3 ns offset between default MC and
-   the stored 208.
+5. **Separate shape from timing, and check the timing against RECO.**
+   - For shape comparisons, use the unshifted placement (the fit-loop target) or a
+     fitted phase.
+   - For what reconstruction sees, use the RECO placement (section 4.5). There the
+     default MC is about 4 ns, `y11` later still, and the data 7–8 ns later than
+     reco's templates.
+   - Next: compare with the time Mahi reconstructs for these channels, and decide
+     whether the MC timing (`shift = 7.2` ns in `Y11206()`, simulation `timePhase`)
+     should be adjusted together with the shape tuning.
 
 ## 6. Caveats
 
@@ -496,5 +603,6 @@ ROOT outputs: `edmHcalPulseShape_gensim_chinfo_{y11,sipm,both}.root`,
 `edmHcalPulseShape_digiraw.root`, `edmHcalPulseShape_data.root`.
 
 Plots per variant: `{HB,HE}_SiPM_8ts_chinfo_{y11,sipm,both}.png` (peak-centred LUTs),
-`…_unshifted.png` (`--lut-align soi-start`, LUTs as stored) and `…_fit.png`
+`…_unshifted.png` (`--lut-align soi-start`, LUTs as stored), `…_reco.png`
+(`--lut-align reco`, LUTs placed as Mahi does) and `…_fit.png`
 (`--fit-phase --subtract-baseline`).

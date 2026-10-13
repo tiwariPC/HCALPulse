@@ -15,9 +15,8 @@ venv/
 *.pcm
 *.exe
 
-# Backups and logs
+# Backups
 *.bak
-*.log
 
 # Build directories
 build/
@@ -32,5 +31,6 @@ obj/
 
 # Logs and output
 *.log
+logs/
 output/
 results/
